@@ -104,6 +104,13 @@ Units& Battlefield::operator[](const BattleSide& side)
 }
 
 
+void Battlefield::clear()
+{
+	self_units.clear();
+	enemy_units.clear();
+}
+
+
 void Battlefield::swap_battle_sides()
 {
 	self_units.swap(enemy_units);

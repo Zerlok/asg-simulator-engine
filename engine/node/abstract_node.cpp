@@ -170,15 +170,17 @@ void AbstractNode::_forward_result_to_outputs()
 {
 	for (PortPairList& port_pair_lst : _outputs)
 		for (PortPair& port_pair : port_pair_lst)
-			port_pair.first->_receive_data(port_pair.second, _result_data);
-	//			port_pair.first->_inputs[port_pair.second] = _result_data;
+			port_pair.first->_inputs[port_pair.second] = _result_data;
+//			port_pair.first->_receive_data(port_pair.second, _result_data);
+
+	_result_data.clear();
 }
 
 
-void AbstractNode::_receive_data(const int in_port_num, const Battlefield& data)
-{
-	_inputs[in_port_num] = data;
-}
+//void AbstractNode::_receive_data(const int in_port_num, const Battlefield& data)
+//{
+//	_inputs[in_port_num] = data;
+//}
 
 
 bool AbstractNode::_is_valid_in_port_num(const int in_port_num) const

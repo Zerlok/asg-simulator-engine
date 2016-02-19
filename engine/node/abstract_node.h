@@ -64,7 +64,7 @@ class AbstractNode
 
 		// Methods.
 		void _forward_result_to_outputs();
-		virtual void _receive_data(const int in_port_num, const Battlefield& data);
+//		virtual void _receive_data(const int in_port_num, const Battlefield& data);
 
 	private:
 		// Methods.

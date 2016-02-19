@@ -46,6 +46,7 @@ class Battlefield
 		Units& operator[](const BattleSide& side);
 
 		// Methods.
+		void clear();
 		void swap_battle_sides();
 
 	private:
