@@ -1,0 +1,28 @@
+# Nodes types:
+#  root	0
+#  fire	1
+#  hold	2
+#  move	3
+#  select	4
+#  condition	5
+#  end	6
+
+# Nodes table
+# Format: Type | Arguments...
+
+0
+4|5|0
+3|[1, 0, 0]
+1|[0, 0, 0]
+6|1
+[EOD]
+
+# Connections matrix
+# Out is negative (link starts) - num of otput port.
+# In is positive (link ends) - num of input port.
+# Format: ... || -out || ... || in1 | in2 | ... | inN | ...
+-0|0|||||||
+|-0|0||||||
+||-0|0|||||
+|||-0|0||||
+[EOD]
