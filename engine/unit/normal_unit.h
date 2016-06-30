@@ -2,7 +2,7 @@
 #define __NORMAL_UNIT_H__
 
 
-#include "core/coretypes.h"
+#include "core/types.h"
 #include "abstract_unit.h"
 
 

@@ -1,5 +1,5 @@
 #include <iomanip>
-#include "math.h"
+#include <cmath>
 #include "point.h"
 
 
@@ -14,6 +14,19 @@ Point::Point(const int x, const int y, const int z)
 Point::Point(const int cordinates[3])
 	: _x(cordinates[0]), _y(cordinates[1]), _z(cordinates[2])
 {
+}
+
+
+Point::Point(const std::initializer_list<int>& lst)
+	: _x(0), _y(0), _z(0)
+{
+	const size_t len = lst.size();
+	if (len > 0)
+		_x = *(lst.begin());
+	if (len > 1)
+		_y = *(lst.begin() + 1);
+	if (len > 2)
+		_z = *(lst.begin() + 2);
 }
 
 
@@ -102,7 +115,7 @@ bool Point::operator==(const int coordinates[3]) const
 
 bool Point::operator!=(const int coordinates[3]) const
 {
-	return !((*this) == coordinates);
+	return !(this->operator==(coordinates));
 }
 
 
@@ -152,16 +165,13 @@ int Point::operator[](const int i) const
 
 int Point::operator[](const char axis) const
 {
-	if (axis == 'x')
-		return get_x();
-
-	if (axis == 'y')
-		return get_y();
-
-	if (axis == 'z')
-		return get_z();
-
-	return 0;
+	switch (axis)
+	{
+		case 'x': return get_x();
+		case 'y': return get_y();
+		case 'z': return get_z();
+		default: return 0;
+	}
 }
 
 

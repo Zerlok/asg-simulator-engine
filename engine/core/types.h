@@ -9,7 +9,7 @@
 
 class AbstractNode;
 class AbstractUnit;
-class Simulator;
+class NodeSimulator;
 
 
 using Nodes = std::vector<AbstractNode*>;

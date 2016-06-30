@@ -39,3 +39,22 @@ std::vector<std::string> stringutils::split(
 
 	return std::move(strings);
 }
+
+
+template<>
+std::ostream& operator<<(std::ostream& out, const std::vector<std::string>& vec)
+{
+	const size_t len = vec.size();
+	out << '[' << len << "] {";
+
+	if (len > 0)
+		out << '\'';
+
+	for (size_t i = 0; i < len; ++i)
+		out << vec[i] << "', '";
+
+	if (len > 0)
+		out << "\b\b\b";
+
+	return out << '}';
+}

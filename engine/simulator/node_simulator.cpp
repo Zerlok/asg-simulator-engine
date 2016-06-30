@@ -8,10 +8,10 @@
 #include "node/units_select_node.h"
 #include "node/node_reader.h"
 #include "node/node_utils.h"
-#include "simulator.h"
+#include "node_simulator.h"
 
 
-Simulator::Simulator()
+NodeSimulator::NodeSimulator()
 {
 	// Init unit factory.
 	_unit_factory.registerate<NormalUnit>("normal");
@@ -28,24 +28,24 @@ Simulator::Simulator()
 }
 
 
-Simulator::~Simulator()
+NodeSimulator::~NodeSimulator()
 {
 }
 
 
-const UnitFactory& Simulator::get_unit_factory() const
+const UnitFactory& NodeSimulator::get_unit_factory() const
 {
 	return _unit_factory;
 }
 
 
-const NodeFactory& Simulator::get_node_factory() const
+const NodeFactory& NodeSimulator::get_node_factory() const
 {
 	return _node_factory;
 }
 
 
-void Simulator::run(
+void NodeSimulator::run(
 		const std::string& attacker_units_filename,
 		const std::string& attacker_strategy_filename,
 		const std::string& defender_units_filename,
@@ -54,7 +54,12 @@ void Simulator::run(
 	// Read two files - build attacker and defender.
 	Player attacker = init_player(attacker_units_filename, attacker_strategy_filename);
 	Player defender = init_player(defender_units_filename, defender_strategy_filename);
-	std::cout << "Players initialized." << std::endl;
+
+	std::cout << " ------ Players initialized ------" << std::endl;
+	std::cout << "Attacker ships: " << std::endl;
+	_print_player_units(attacker);
+	std::cout << "Defender ships: " << std::endl;
+	_print_player_units(defender);
 
 	// Run simulator wiht two players.
 	run(attacker, defender);
@@ -67,7 +72,7 @@ void Simulator::run(
 }
 
 
-void Simulator::run(Player& attacker, Player& defender)
+void NodeSimulator::run(Player& attacker, Player& defender)
 {
 	if (!attacker.is_valid()
 			|| !defender.is_valid())
@@ -112,7 +117,7 @@ void Simulator::run(Player& attacker, Player& defender)
 }
 
 
-Player Simulator::init_player(
+Player NodeSimulator::init_player(
 		const std::string& units_filename,
 		const std::string& strategy_filename)
 {
@@ -131,7 +136,7 @@ Player Simulator::init_player(
 }
 
 
-void Simulator::_print_player_units(const Player& player) const
+void NodeSimulator::_print_player_units(const Player& player) const
 {
 	for (AbstractUnit* unit : player.units)
 		std::cout << "Unit: "

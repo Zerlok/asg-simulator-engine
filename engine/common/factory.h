@@ -9,7 +9,7 @@ class Factory;
 #include <stdexcept>
 #include <unordered_map>
 #include <stdarg.h>
-#include "core/coretypes.h"
+#include "core/types.h"
 
 
 static const std::string ERR_KEY_NOT_FOUND = "The key is not registered: ";

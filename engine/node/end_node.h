@@ -2,7 +2,7 @@
 #define __END_NODE_H__
 
 
-#include "core/coretypes.h"
+#include "core/types.h"
 #include "abstract_node.h"
 
 

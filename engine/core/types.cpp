@@ -1,5 +1,5 @@
 #include <sstream>
-#include "coretypes.h"
+#include "types.h"
 
 
 std::ostream&operator<<(std::ostream& out, const BattleSide& side)

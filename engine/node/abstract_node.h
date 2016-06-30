@@ -4,7 +4,7 @@
 
 #include <vector>
 #include <list>
-#include "core/coretypes.h"
+#include "core/types.h"
 
 
 class AbstractNode

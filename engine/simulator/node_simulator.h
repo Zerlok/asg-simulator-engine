@@ -2,16 +2,16 @@
 #define __SIMULATOR_H__
 
 
-#include "coretypes.h"
-#include "factories.h"
+#include "core/types.h"
+#include "core/factories.h"
 
 
-class Simulator
+class NodeSimulator
 {
 	public:
 		// Constructor / Destructor.
-		Simulator();
-		~Simulator();
+		NodeSimulator();
+		~NodeSimulator();
 
 		// Getters.
 		const UnitFactory& get_unit_factory() const;
@@ -29,8 +29,8 @@ class Simulator
 
 	private:
 		// No copy constructors.
-		Simulator(const Simulator& simulator);
-		Simulator& operator=(const Simulator& simulator);
+		NodeSimulator(const NodeSimulator& simulator);
+		NodeSimulator& operator=(const NodeSimulator& simulator);
 
 		void _print_player_units(const Player& player) const;
 

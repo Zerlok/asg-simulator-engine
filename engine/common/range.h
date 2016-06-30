@@ -12,18 +12,29 @@ class Range
 	public:
 		using value_type = DataType;
 
-		static void randomize(const size_t seed=0)
+		static void randomize(const size_t& seed = 0)
 		{
-			srand((seed == 0) ? time(NULL) : seed);
+			static bool is_randomized = false;
+			if (!is_randomized)
+			{
+				srand((seed == 0) ? time(NULL) : seed);
+				is_randomized = true;
+			}
 		}
 
 		// Constructors / Destructor.
 		Range(const value_type& max_value)
 			: _min(0),
-			  _max(max_value) {}
+			  _max(max_value)
+		{
+			randomize();
+		}
 		Range(const value_type& min_value, const value_type& max_value)
 			: _min(min_value),
-			  _max(max_value) {}
+			  _max(max_value)
+		{
+			randomize();
+		}
 		Range(const Range<value_type>& range)
 			: _min(range._min),
 			  _max(range._max) {}
@@ -35,7 +46,7 @@ class Range
 		// Methods.
 		value_type get_value() const
 		{
-			return _min + (rand() % _max);
+			return _min + (rand() % (_max - _min));
 		}
 
 		// Getters.

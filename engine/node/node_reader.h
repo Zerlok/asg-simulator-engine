@@ -3,7 +3,7 @@
 
 
 #include <fstream>
-#include "core/coretypes.h"
+#include "core/types.h"
 #include "core/factories.h"
 #include "abstract_node.h"
 

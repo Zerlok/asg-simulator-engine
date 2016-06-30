@@ -3,7 +3,7 @@
 
 
 #include "common/point.h"
-#include "core/coretypes.h"
+#include "core/types.h"
 #include "abstract_node.h"
 
 

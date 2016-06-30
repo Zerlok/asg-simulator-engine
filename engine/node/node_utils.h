@@ -2,7 +2,7 @@
 #define __NODE_UTILS_H__
 
 
-#include "core/coretypes.h"
+#include "core/types.h"
 #include "abstract_node.h"
 #include "root_node.h"
 

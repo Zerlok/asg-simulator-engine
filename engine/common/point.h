@@ -3,7 +3,8 @@
 
 
 #include <iostream>
-#include "core/coretypes.h"
+#include <initializer_list>
+#include "core/types.h"
 
 
 class Point
@@ -13,6 +14,7 @@ class Point
 
 		Point(const int x=zero._x, const int y=zero._y, const int z=zero._z);
 		Point(const int coordinates[3]);
+		Point(const std::initializer_list<int> &lst);
 		Point(const Point &point);
 		Point(Point &&point);
 		virtual ~Point();
@@ -21,7 +23,7 @@ class Point
 		int get_y() const;
 		int get_z() const;
 
-		double distance(const Point &point) const;
+		double distance(const Point &point = zero) const;
 
 		Point &operator=(const Point &point);
 		Point &operator=(const int coordinates[3]);
