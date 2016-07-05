@@ -7,8 +7,8 @@ class Factory;
 
 #include <sstream>
 #include <stdexcept>
+#include <vector>
 #include <unordered_map>
-#include <stdarg.h>
 #include "core/types.h"
 
 
@@ -21,9 +21,8 @@ class AbstractClassCreator
 	public:
 		AbstractClassCreator() {}
 		virtual ~AbstractClassCreator() {}
-		virtual BaseCls* create() = 0;
-//		virtual BaseCls* create(const va_list& args) = 0;
-		virtual BaseCls* create(const Arguments& args) = 0;
+		virtual BaseCls* create() const = 0;
+		virtual BaseCls* create(const Arguments& args) const = 0;
 };
 
 
@@ -34,15 +33,11 @@ class DerivedClassCreator : public AbstractClassCreator<BaseCls>
 		DerivedClassCreator() {}
 		virtual ~DerivedClassCreator() {}
 
-		BaseCls* create()
+		BaseCls* create() const override
 		{
 			return new DerivedCls();
 		}
-//		BaseCls* create(const va_list& args)
-//		{
-//			return new DerivedCls(args);
-//		}
-		BaseCls* create(const Arguments& args)
+		BaseCls* create(const Arguments& args) const override
 		{
 			return new DerivedCls(args);
 		}
@@ -57,12 +52,13 @@ class Factory
 		using BaseCls = B;
 		using BaseCreator = AbstractClassCreator<BaseCls>;
 		using CreatorsMap = std::unordered_map<Key, BaseCreator*>;
+		using Keys = std::vector<Key>;
 
 		Factory() {}
 		~Factory()
 		{
-			for (std::pair<Key, BaseCreator*> p : _creators)
-				delete p.second;
+			for (const typename CreatorsMap::value_type& pair : _creators)
+				delete pair.second;
 		}
 
 		template<class DerivedCls>
@@ -75,9 +71,9 @@ class Factory
 			return true;
 		}
 
-		BaseCls* create(const Key& key)
+		BaseCls* create(const Key& key) const
 		{
-			typename CreatorsMap::iterator it = _creators.find(key);
+			typename CreatorsMap::const_iterator it = _creators.find(key);
 
 			if (it == _creators.end())
 			{
@@ -86,17 +82,12 @@ class Factory
 				throw std::invalid_argument(ss.str());
 			}
 
-//			va_list args;
-//			va_start(args, key);
-//			BaseCls* instance = ((it->second)->create(args));
-//			va_end(args);
-
 			return ((it->second)->create());
 		}
 
-		BaseCls* create(const Key &key, const Arguments& args)
+		BaseCls* create(const Key &key, const Arguments& args) const
 		{
-			typename CreatorsMap::iterator it = _creators.find(key);
+			typename CreatorsMap::const_iterator it = _creators.find(key);
 
 			if (it == _creators.end())
 			{
@@ -110,6 +101,16 @@ class Factory
 
 			else
 				return ((it->second)->create(args));
+		}
+
+		Keys get_registered() const
+		{
+			Keys keys(_creators.size());
+
+			for (const typename CreatorsMap::value_type& pair : _creators)
+				keys.push_back(pair.first);
+
+			return std::move(keys);
 		}
 
 	private:

@@ -17,10 +17,11 @@ class EndNode : public AbstractNode
 		EndNode(EndNode&& node);
 		~EndNode();
 
-		const Battlefield& execute();
+		const NodeData& execute() override;
+		Arguments get_arguments() const override;
 
-		Battlefield& get_data();
-		const Battlefield& get_data() const;
+		NodeData& get_data();
+		const NodeData& get_data() const;
 };
 
 

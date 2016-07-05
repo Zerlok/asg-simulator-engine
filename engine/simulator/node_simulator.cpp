@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include "unit/normal_unit.h"
 #include "unit/unit_reader.h"
 #include "node/root_node.h"
@@ -6,8 +8,8 @@
 #include "node/cmd_hold_node.h"
 #include "node/cmd_fire_node.h"
 #include "node/units_select_node.h"
-#include "node/node_reader.h"
 #include "node/node_utils.h"
+#include "editor/node_reader_writer.h"
 #include "node_simulator.h"
 
 
@@ -17,14 +19,31 @@ NodeSimulator::NodeSimulator()
 	_unit_factory.registerate<NormalUnit>("normal");
 
 	// Init node factory.
-	_node_factory.registerate<RootNode>(AbstractNode::Type::root);
-	_node_factory.registerate<EndNode>(AbstractNode::Type::end);
-	_node_factory.registerate<CmdFireNode>(AbstractNode::Type::cmd_fire);
-	_node_factory.registerate<CmdHoldNode>(AbstractNode::Type::cmd_hold);
-	_node_factory.registerate<CmdMoveNode>(AbstractNode::Type::cmd_move);
-	_node_factory.registerate<UnitsSelectNode>(AbstractNode::Type::units_select);
+	std::stringstream ss;
 
-	Range<>::randomize();
+	// Basic nodes.
+	ss << AbstractNode::Type::root;
+	_node_factory.registerate<RootNode>(ss.str());
+	ss.str("");
+	ss << AbstractNode::Type::end;
+	_node_factory.registerate<EndNode>(ss.str());
+	ss.str("");
+
+	// Command nodes.
+	ss << AbstractNode::Type::cmd_fire;
+	_node_factory.registerate<CmdFireNode>(ss.str());
+	ss.str("");
+	ss << AbstractNode::Type::cmd_hold;
+	_node_factory.registerate<CmdHoldNode>(ss.str());
+	ss.str("");
+	ss << AbstractNode::Type::cmd_move;
+	_node_factory.registerate<CmdMoveNode>(ss.str());
+	ss.str("");
+
+	// Unit nodes.
+	ss << AbstractNode::Type::units_select;
+	_node_factory.registerate<UnitsSelectNode>(ss.str());
+	ss.str("");
 }
 
 
@@ -80,7 +99,7 @@ void NodeSimulator::run(Player& attacker, Player& defender)
 
 	// Execute attacker's and defender's schemes continiusly,
 	// until battle result or max iterations num.
-	Battlefield battle_data(attacker.units, defender.units);
+	NodeData battle_data(attacker.units, defender.units);
 
 	nodeutils::sort_by_levels(attacker.strategy);
 	nodeutils::sort_by_levels(defender.strategy);
@@ -92,12 +111,12 @@ void NodeSimulator::run(Player& attacker, Player& defender)
 	for (int i = 0; i < 12; ++i)
 	{
 		RootNode* root = RootNode::cast(current_player->strategy.front());
-		EndNode* end = EndNode::cast(current_player->strategy.back());
+//		EndNode* end = EndNode::cast(current_player->strategy.back());
 
 		root->set_data(battle_data);
 		for (AbstractNode* node : current_player->strategy)
 			node->execute();
-		battle_data = end->get_data();
+//		battle_data = end->get_data();
 
 		// TODO: Check for battle end (no enemy ships left).
 
@@ -109,7 +128,7 @@ void NodeSimulator::run(Player& attacker, Player& defender)
 		std::cout << std::endl;
 
 		// Swap sides.
-		battle_data.swap_battle_sides();
+		battle_data.swap_sides();
 		std::swap(current_player, idle_player);
 	}
 
@@ -123,14 +142,11 @@ Player NodeSimulator::init_player(
 {
 	Player player;
 
-	UnitReader units_reader(units_filename, _unit_factory);
-	NodeReader strategy_reader(strategy_filename, _node_factory);
+	UnitReader units_reader(_unit_factory);
+	NodeReader strategy_reader(_node_factory);
 
-	units_reader.read();
-	strategy_reader.read();
-
-	player.units = units_reader.get_units();
-	player.strategy = strategy_reader.get_nodes();
+	player.units = units_reader.read(units_filename);
+	player.strategy = strategy_reader.read(strategy_filename);
 
 	return std::move(player);
 }

@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include "unit/abstract_unit.h"
 #include "cmd_hold_node.h"
 
@@ -8,7 +10,7 @@ CmdHoldNode::CmdHoldNode()
 }
 
 
-CmdHoldNode::CmdHoldNode(const Arguments& args)
+CmdHoldNode::CmdHoldNode(const Arguments&)
 	: AbstractNode(Type::cmd_hold, 1, 1)
 {
 }
@@ -31,14 +33,20 @@ CmdHoldNode::~CmdHoldNode()
 }
 
 
-const Battlefield& CmdHoldNode::execute()
+const NodeData& CmdHoldNode::execute()
 {
-	_result_data = std::move(_inputs[0]);
+	_result_data = _receive_data_from_input(0);
 
 	for (AbstractUnit* unit : _result_data[BattleSide::self])
 		unit->hold();
 
-	_forward_result_to_outputs();
+	_push_result_to_outputs();
 	return _result_data;
+}
+
+
+Arguments CmdHoldNode::get_arguments() const
+{
+	return std::move(Arguments());
 }
 

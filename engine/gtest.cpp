@@ -92,6 +92,19 @@ TEST(Common, StringUtilsSplit)
 	EXPECT_TRUE(result.empty()) << result;
 }
 
+
+TEST(Common, StringUtilsJoin)
+{
+	std::vector<std::string> data {"Hello", "this", "world!"};
+	std::string result = stringutils::join(data, ' ');
+	EXPECT_EQ("Hello this world!", result);
+
+	std::vector<std::string> empty;
+	result = stringutils::join(empty, '!');
+	EXPECT_EQ("", result);
+}
+
+
 /*
 TEST(Node, AbstractNode)
 {
@@ -158,6 +171,7 @@ TEST(Unit, UnitReader)
 
 }
 */
+
 
 int main(int argc, char *argv[])
 {

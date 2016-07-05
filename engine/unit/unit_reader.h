@@ -18,19 +18,17 @@ namespace unitformat
 class UnitReader
 {
 	public:
-		UnitReader(const std::string& filename, UnitFactory& unit_factory);
+		UnitReader(const UnitFactory& unit_factory);
 		~UnitReader();
 
-		void read();
-		const Units& get_units();
+		Units read(const std::string& filename) const;
+		Units read(std::ifstream& infile) const;
 
 	private:
 		UnitReader();
 		UnitReader(const UnitReader& reader);
 
-		std::ifstream _infile;
-		UnitFactory& _unit_factory;
-		Units _units;
+		const UnitFactory& _unit_factory;
 };
 
 

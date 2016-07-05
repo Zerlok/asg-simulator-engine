@@ -15,12 +15,12 @@ class CmdFireNode : public AbstractNode
 		CmdFireNode(CmdFireNode&& node);
 		~CmdFireNode();
 
-		const Battlefield& execute();
+		const NodeData& execute() override;
+		Arguments get_arguments() const override;
 
 	private:
 		static const Point battlefield_size;
 
-		Units _targets;
 		Point _target_pos; // enemy position (counts from enemy side).
 };
 

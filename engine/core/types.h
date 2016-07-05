@@ -7,15 +7,18 @@
 #include <vector>
 
 
+// ---------- BASIC TYPES ---------- //
+
+class NodeData;
 class AbstractNode;
 class AbstractUnit;
-class NodeSimulator;
-
 
 using Nodes = std::vector<AbstractNode*>;
 using Units = std::vector<AbstractUnit*>;
 using Arguments = std::vector<std::string>;
 
+
+// ---------- BATTLE PLAYERS' SIDES ENUM ---------- //
 
 enum class BattleSide
 {
@@ -27,27 +30,29 @@ std::ostream& operator<<(std::ostream& out, const BattleSide& side);
 std::istream& operator>>(std::istream& in, BattleSide& side);
 
 
-class Battlefield
+// ---------- NODE DATA ---------- //
+
+class NodeData
 {
 	public:
 		// Constructors / Destructor.
-		Battlefield();
-		Battlefield(const Units& units1, const Units& units2);
-		Battlefield(const Battlefield& data);
-		Battlefield(Battlefield&& data);
-		~Battlefield() {}
+		NodeData();
+		NodeData(const Units& units1, const Units& units2);
+		NodeData(const NodeData& data);
+		NodeData(NodeData&& data);
+		~NodeData() {}
 
 		// Getters.
+		bool is_empty() const;
 		Units& get_units(const BattleSide& side);
 
 		// Operators.
-		Battlefield& operator=(const Battlefield& data);
-		Battlefield& operator+=(const Battlefield& data);
+		NodeData& operator=(const NodeData& data);
 		Units& operator[](const BattleSide& side);
 
 		// Methods.
 		void clear();
-		void swap_battle_sides();
+		void swap_sides();
 
 	private:
 		// Fields.
@@ -55,6 +60,8 @@ class Battlefield
 		Units enemy_units;
 };
 
+
+// ---------- PLAYER UNITS AND STRATEGY CONTAINER ---------- //
 
 class Player
 {
@@ -65,6 +72,7 @@ class Player
 		Player(Player&& player);
 		~Player();
 
+		// Methods.
 		bool is_valid() const;
 
 		// Fields.

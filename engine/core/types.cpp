@@ -1,5 +1,6 @@
 #include <sstream>
 #include "types.h"
+#include "common/utils.h"
 
 
 std::ostream&operator<<(std::ostream& out, const BattleSide& side)
@@ -21,6 +22,8 @@ std::ostream&operator<<(std::ostream& out, const BattleSide& side)
 
 	return out;
 }
+
+
 std::istream&operator>>(std::istream& in, BattleSide& side)
 {
 	char c;
@@ -37,28 +40,29 @@ std::istream&operator>>(std::istream& in, BattleSide& side)
 		in >> c;
 	}
 
-	if (ss.str().compare("[ENEMY]") == 0)
+	const std::string s = ss.str();
+	if (s == "[ENEMY]")
 		side = BattleSide::enemy;
-	else
+	else if (s == "[SELF]")
 		side = BattleSide::self;
 
 	return in;
 }
 
 
-Battlefield::Battlefield() {}
-Battlefield::Battlefield(const Units& units1, const Units& units2)
+NodeData::NodeData() {}
+NodeData::NodeData(const Units& units1, const Units& units2)
 	: self_units(units1),
 	  enemy_units(units2) {}
-Battlefield::Battlefield(const Battlefield& data)
+NodeData::NodeData(const NodeData& data)
 	: self_units(data.self_units),
 	  enemy_units(data.enemy_units) {}
-Battlefield::Battlefield(Battlefield&& data)
+NodeData::NodeData(NodeData&& data)
 	: self_units(std::move(data.self_units)),
 	  enemy_units(std::move(data.enemy_units)) {}
 
 
-Units&Battlefield::get_units(const BattleSide& side)
+Units& NodeData::get_units(const BattleSide& side)
 {
 	switch (side)
 	{
@@ -72,7 +76,7 @@ Units&Battlefield::get_units(const BattleSide& side)
 }
 
 
-Battlefield& Battlefield::operator=(const Battlefield& data)
+NodeData& NodeData::operator=(const NodeData& data)
 {
 	self_units = data.self_units;
 	enemy_units = data.enemy_units;
@@ -81,37 +85,20 @@ Battlefield& Battlefield::operator=(const Battlefield& data)
 }
 
 
-Battlefield& Battlefield::operator+=(const Battlefield& data)
-{
-	self_units.insert(
-			self_units.end(),
-			data.self_units.begin(),
-			data.self_units.end()
-	);
-	enemy_units.insert(
-			enemy_units.end(),
-			data.enemy_units.begin(),
-			data.enemy_units.end()
-	);
-
-	return (*this);
-}
-
-
-Units& Battlefield::operator[](const BattleSide& side)
+Units& NodeData::operator[](const BattleSide& side)
 {
 	return get_units(side);
 }
 
 
-void Battlefield::clear()
+void NodeData::clear()
 {
 	self_units.clear();
 	enemy_units.clear();
 }
 
 
-void Battlefield::swap_battle_sides()
+void NodeData::swap_sides()
 {
 	self_units.swap(enemy_units);
 }

@@ -7,30 +7,37 @@
 static const std::string ERR_CANNOT_OPEN_FILE = "Can't open the file: ";
 
 
-UnitReader::UnitReader(const std::string& filename, UnitFactory& unit_factory)
-	: _infile(filename),
-	  _unit_factory(unit_factory),
-	  _units()
+UnitReader::UnitReader(const UnitFactory& unit_factory)
+	: _unit_factory(unit_factory)
 {
-	if (!_infile.is_open())
-	{
-		std::stringstream ss;
-		ss << ERR_CANNOT_OPEN_FILE << filename;
-		throw std::invalid_argument(ss.str());
-	}
 }
 
 
 UnitReader::~UnitReader()
 {
-	_infile.close();
 }
 
 
-void UnitReader::read()
+Units UnitReader::read(const std::string& filename) const
 {
+	std::ifstream infile(filename);
+
+	if (!infile.is_open())
+	{
+		std::stringstream ss;
+		ss << ERR_CANNOT_OPEN_FILE << filename;
+		throw std::invalid_argument(ss.str());
+	}
+
+	return read(infile);
+}
+
+
+Units UnitReader::read(std::ifstream& infile) const
+{
+	Units units;
 	std::string line;
-	while (std::getline(_infile, line))
+	while (std::getline(infile, line))
 	{
 		if (line.front() == unitformat::comment)
 			continue;
@@ -43,12 +50,8 @@ void UnitReader::read()
 		const int units_amount = std::stoi(values[1]);
 
 		for (int i = 0; i < units_amount; ++i)
-			_units.push_back(_unit_factory.create(unit_type));
+			units.push_back(_unit_factory.create(unit_type));
 	}
-}
 
-
-const Units& UnitReader::get_units()
-{
-	return _units;
+	return std::move(units);
 }

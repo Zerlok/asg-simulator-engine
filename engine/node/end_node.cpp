@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include "end_node.h"
 
 
@@ -40,22 +42,28 @@ EndNode::~EndNode()
 }
 
 
-const Battlefield& EndNode::execute()
+const NodeData& EndNode::execute()
 {
-	for (const Battlefield& data : _inputs)
-		_result_data += data;
+//	for (const NodeData& data : _inputs)
+//		_result_data.
 
 	return _result_data;
 }
 
 
-Battlefield& EndNode::get_data()
+Arguments EndNode::get_arguments() const
+{
+	return std::move(Arguments());
+}
+
+
+NodeData& EndNode::get_data()
 {
 	return _result_data;
 }
 
 
-const Battlefield& EndNode::get_data() const
+const NodeData& EndNode::get_data() const
 {
 	return _result_data;
 }

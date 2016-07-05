@@ -10,12 +10,13 @@ class CmdHoldNode : public AbstractNode
 {
 	public:
 		CmdHoldNode();
-		CmdHoldNode(const Arguments& args);
+		CmdHoldNode(const Arguments&);
 		CmdHoldNode(const CmdHoldNode& node);
 		CmdHoldNode(CmdHoldNode&& node);
 		~CmdHoldNode();
 
-		const Battlefield& execute();
+		const NodeData& execute() override;
+		Arguments get_arguments() const override;
 };
 
 

@@ -1,4 +1,5 @@
 #include <sstream>
+
 #include "unit/abstract_unit.h"
 #include "cmd_fire_node.h"
 
@@ -8,19 +9,19 @@ const Point CmdFireNode::battlefield_size = Point(5, 0, 0);
 
 CmdFireNode::CmdFireNode(const Point& pos)
 	: AbstractNode(Type::cmd_fire, 1, 1),
-	  _target_pos(battlefield_size - pos)
+	  _target_pos(pos)
 {
 }
 
 
 CmdFireNode::CmdFireNode(const Arguments& args)
 	: AbstractNode(Type::cmd_fire, 1, 1),
-	  _target_pos(battlefield_size)
+	  _target_pos()
 {
 	Point pos;
 	std::stringstream ss(args[0]);
 	ss >> pos;
-	_target_pos -= pos;
+	_target_pos = pos;
 }
 
 
@@ -43,9 +44,9 @@ CmdFireNode::~CmdFireNode()
 }
 
 
-const Battlefield& CmdFireNode::execute()
+const NodeData& CmdFireNode::execute()
 {
-	_result_data = std::move(_inputs[0]);
+	_result_data = _receive_data_from_input(0);
 
 	// Get total damage from shooting side.
 	unsigned long long int sum_damage = 0;
@@ -61,7 +62,7 @@ const Battlefield& CmdFireNode::execute()
 
 	if (targets.size() == 0)
 	{
-		_forward_result_to_outputs();
+		_push_result_to_outputs();
 		return _result_data;
 	}
 
@@ -81,6 +82,15 @@ const Battlefield& CmdFireNode::execute()
 		for (size_t i = 0; i < dmg; ++i)
 			targets[i]->receive_damage(1);
 
-	_forward_result_to_outputs();
+	_push_result_to_outputs();
 	return _result_data;
+}
+
+
+Arguments CmdFireNode::get_arguments() const
+{
+	std::stringstream ss;
+	ss << _target_pos;
+
+	return std::move(Arguments({ss.str()}));
 }

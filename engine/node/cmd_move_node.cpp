@@ -1,4 +1,5 @@
 #include <sstream>
+
 #include "unit/abstract_unit.h"
 #include "cmd_move_node.h"
 
@@ -38,14 +39,22 @@ CmdMoveNode::~CmdMoveNode()
 }
 
 
-const Battlefield& CmdMoveNode::execute()
+const NodeData& CmdMoveNode::execute()
 {
-	_result_data = std::move(_inputs[0]);
+	_result_data = _receive_data_from_input(0);
 
 	for (AbstractUnit* unit : _result_data[BattleSide::self])
 		unit->move_to(unit->get_position() + _direction);
 
-	_forward_result_to_outputs();
+	_push_result_to_outputs();
 	return _result_data;
 }
 
+
+Arguments CmdMoveNode::get_arguments() const
+{
+	std::stringstream ss;
+	ss << _direction;
+
+	return std::move(Arguments({ss.str()}));
+}

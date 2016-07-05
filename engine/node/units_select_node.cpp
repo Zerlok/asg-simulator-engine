@@ -46,9 +46,9 @@ UnitsSelectNode::~UnitsSelectNode()
 
 
 
-const Battlefield& UnitsSelectNode::execute()
+const NodeData& UnitsSelectNode::execute()
 {
-	_result_data = std::move(_inputs[0]);
+	_result_data = _receive_data_from_input(0);
 
 	// Select all units.
 	if (_amount == 0)
@@ -65,8 +65,27 @@ const Battlefield& UnitsSelectNode::execute()
 
 	_result_data[_side] = selected_units;
 
-	_forward_result_to_outputs();
+	_push_result_to_outputs();
 	return _result_data;
+}
+
+
+Arguments UnitsSelectNode::get_arguments() const
+{
+	Arguments args;
+	std::stringstream ss;
+	ss << _amount;
+	args.push_back(ss.str());
+
+	ss.str("");
+	ss << _offset;
+	args.push_back(ss.str());
+
+	ss.str("");
+	ss << _side;
+	args.push_back(ss.str());
+
+	return std::move(args);
 }
 
 

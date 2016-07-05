@@ -11,15 +11,16 @@ class RootNode : public AbstractNode
 	public:
 		static RootNode* cast(AbstractNode* node);
 
-		RootNode(const Battlefield& data = Battlefield());
+		RootNode(const NodeData& data = NodeData());
 		RootNode(const Arguments& args);
 		RootNode(const RootNode& node);
 		RootNode(RootNode&& node);
 		~RootNode();
 
-		const Battlefield& execute();
+		const NodeData& execute() override;
+		Arguments get_arguments() const override;
 
-		void set_data(const Battlefield& data);
+		void set_data(const NodeData& data);
 };
 
 

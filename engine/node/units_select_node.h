@@ -17,7 +17,8 @@ class UnitsSelectNode : public AbstractNode
 		UnitsSelectNode(UnitsSelectNode&& node);
 		~UnitsSelectNode();
 
-		const Battlefield& execute();
+		const NodeData& execute() override;
+		Arguments get_arguments() const override;
 
 		// Getters.
 		size_t get_amount() const;

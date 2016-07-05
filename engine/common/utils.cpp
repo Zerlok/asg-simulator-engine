@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include "utils.h"
 
 
@@ -41,6 +43,31 @@ std::vector<std::string> stringutils::split(
 }
 
 
+std::string stringutils::join(
+		const std::vector<std::string>& data,
+		const char separator,
+		const bool skip_empty_values)
+{
+	std::stringstream ss;
+	for (const std::string& s : data)
+		if (!skip_empty_values
+				|| !s.empty())
+			ss << s << separator;
+
+	std::string result = ss.str();
+	if (!result.empty())
+		result.erase(result.end()-1);
+
+	return std::move(result);
+}
+
+
+bool stringutils::startswith(const std::string& main, const std::string& substr)
+{
+	return (main.substr(0, substr.size()) == substr);
+}
+
+
 template<>
 std::ostream& operator<<(std::ostream& out, const std::vector<std::string>& vec)
 {
@@ -57,4 +84,16 @@ std::ostream& operator<<(std::ostream& out, const std::vector<std::string>& vec)
 		out << "\b\b\b";
 
 	return out << '}';
+}
+
+
+bool operator==(const std::string& s1, const std::string& s2)
+{
+	return (s1.compare(s2) == 0);
+}
+
+
+bool operator!=(const std::string& s1, const std::string& s2)
+{
+	return (s1.compare(s2) != 0);
 }

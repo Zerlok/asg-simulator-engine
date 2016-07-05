@@ -1,9 +1,162 @@
 #include <stdexcept>
 #include <string>
+#include <algorithm>
 #include "abstract_node.h"
 
 
-static const std::string ERR_INVALID_PORTS_NUM = "Invalid number of ports: must be positive or zero value!";
+AbstractNode::AbstractNode(const Type& type, const size_t& in_ports_num, const size_t& out_ports_num)
+	: _type(type),
+	  _inputs(in_ports_num),
+	  _outputs(out_ports_num)
+{
+}
+
+
+AbstractNode::AbstractNode(const AbstractNode& node)
+	: _type(node._type),
+	  _inputs(node._inputs),
+	  _outputs(node._outputs)
+{
+}
+
+
+AbstractNode::AbstractNode(AbstractNode&& node)
+	: _type(std::move(node._type)),
+	  _inputs(std::move(node._inputs)),
+	  _outputs(std::move(node._outputs))
+{
+}
+
+
+AbstractNode::~AbstractNode()
+{
+}
+
+
+bool AbstractNode::is_ready() const
+{
+	for (const DataPair& pair : _inputs)
+		if (!pair.first)
+			return false;
+
+	return true;
+}
+
+
+void AbstractNode::link(const size_t& out_port_num, const size_t& in_port_num, AbstractNode& node)
+{
+	_outputs[out_port_num].push_back({&node, in_port_num});
+}
+
+
+void AbstractNode::unlink(const size_t& out_port_num, const size_t& in_port_num, AbstractNode& node)
+{
+	PortPairs& port_pairs = _outputs[out_port_num];
+	const PortPair pair = {&node, in_port_num};
+	const PortPairs::iterator it = std::find(port_pairs.begin(), port_pairs.end(), pair);
+
+	if (it != port_pairs.end())
+		port_pairs.erase(it);
+}
+
+
+bool AbstractNode::is_linked(const size_t& out_port_num, const size_t& in_port_num, const AbstractNode& node) const
+{
+	for (const PortPair& pair : _outputs[out_port_num])
+		if ((pair.first == &node)
+				&& (pair.second == in_port_num))
+			return true;
+
+	return false;
+}
+
+
+const AbstractNode::Type& AbstractNode::get_type() const
+{
+	return _type;
+}
+
+
+const AbstractNode::InDatas& AbstractNode::get_input_datas() const
+{
+	return _inputs;
+}
+
+
+const AbstractNode::OutPorts& AbstractNode::get_output_ports() const
+{
+	return _outputs;
+}
+
+
+Nodes AbstractNode::get_connected_outputs()
+{
+	Nodes outputs;
+
+	for (PortPairs& port_pairs_lst : _outputs)
+		for (PortPair& port_pair : port_pairs_lst)
+			outputs.push_back(port_pair.first);
+
+	return std::move(outputs);
+}
+
+
+const Nodes AbstractNode::get_connected_outputs() const
+{
+	Nodes outputs;
+
+	for (const PortPairs& port_pairs_lst : _outputs)
+		for (const PortPair& port_pair : port_pairs_lst)
+			outputs.push_back(port_pair.first);
+
+	return std::move(outputs);
+}
+
+
+bool AbstractNode::operator==(const AbstractNode& node) const
+{
+	return (size_t(this) == size_t(&node));
+}
+
+
+bool AbstractNode::operator!=(const AbstractNode& node) const
+{
+	return (!(this->operator==(node)));
+}
+
+
+bool AbstractNode::operator<(const AbstractNode& node) const
+{
+	return (size_t(this) < size_t(&node));
+}
+
+
+void AbstractNode::_push_result_to_outputs()
+{
+	for (PortPairs& port_pair_lst : _outputs)
+		for (PortPair& port_pair : port_pair_lst)
+			// #TODO: here is copying becomes.
+			port_pair.first->_put_data_to_input(port_pair.second, _result_data);
+
+	_result_data.clear();
+}
+
+
+void AbstractNode::_put_data_to_input(const size_t& in_port_num, const NodeData& data)
+{
+	DataPair& pair = _inputs[in_port_num];
+	pair.first = true;
+	pair.second = data;
+}
+
+
+NodeData AbstractNode::_receive_data_from_input(const size_t& in_port_num)
+{
+	DataPair& pair = _inputs[in_port_num];
+	pair.first = false;
+
+	return std::move(pair.second);
+}
 
 
 AbstractNode::Type AbstractNode::make_type(const int t)
@@ -37,163 +190,12 @@ AbstractNode::Type AbstractNode::make_type(const int t)
 			break;
 
 		case (int(AbstractNode::Type::end)):
-			type = AbstractNode::Type::end;
-			break;
-
 		default:
+			type = AbstractNode::Type::end;
 			break;
 	}
 
-	return type;
-}
-
-
-AbstractNode::AbstractNode(const Type& type, const int in_ports_num, const int out_ports_num)
-	: _type(type),
-	  _inputs(in_ports_num),
-	  _outputs(out_ports_num)
-{
-	if ((in_ports_num < 0)
-			|| (out_ports_num < 0))
-		throw std::invalid_argument(ERR_INVALID_PORTS_NUM);
-}
-
-
-AbstractNode::AbstractNode(const AbstractNode& node)
-	: _type(node._type),
-	  _inputs(node._inputs),
-	  _outputs(node._outputs)
-{
-}
-
-
-AbstractNode::AbstractNode(AbstractNode&& node)
-	: _type(std::move(node._type)),
-	  _inputs(std::move(node._inputs)),
-	  _outputs(std::move(node._outputs))
-{
-}
-
-
-AbstractNode::~AbstractNode()
-{
-}
-
-
-void AbstractNode::link(const int out_port_num, const int in_port_num, AbstractNode* node)
-{
-	if ((node == nullptr)
-			|| !_is_valid_out_port_num(out_port_num)
-			|| !(node->_is_valid_in_port_num(in_port_num))
-			|| is_linked(out_port_num, in_port_num, node))
-		return;
-
-	_outputs[out_port_num].push_back({node, in_port_num});
-}
-
-
-bool AbstractNode::is_linked(const int out_port_num, const int in_port_num, const AbstractNode* node) const
-{
-	if (node == nullptr)
-		return false;
-
-	for (const PortPair& port_pair : _outputs[out_port_num])
-		if ((port_pair.first == node)
-				&& (port_pair.second == in_port_num))
-			return true;
-
-	return false;
-}
-
-
-const AbstractNode::Type& AbstractNode::get_type() const
-{
-	return _type;
-}
-
-
-const AbstractNode::InDatas& AbstractNode::get_input_datas() const
-{
-	return _inputs;
-}
-
-
-const AbstractNode::OutPorts& AbstractNode::get_output_ports() const
-{
-	return _outputs;
-}
-
-
-Nodes AbstractNode::get_connected_outputs()
-{
-	Nodes outputs;
-
-	for (PortPairList& port_pairs_lst : _outputs)
-		for (PortPair& port_pair : port_pairs_lst)
-			outputs.push_back(port_pair.first);
-
-	return std::move(outputs);
-}
-
-
-const Nodes AbstractNode::get_connected_outputs() const
-{
-	Nodes outputs;
-
-	for (const PortPairList& port_pairs_lst : _outputs)
-		for (const PortPair& port_pair : port_pairs_lst)
-			outputs.push_back(port_pair.first);
-
-	return std::move(outputs);
-}
-
-
-bool AbstractNode::operator==(const AbstractNode* node) const
-{
-	return (size_t(this) == size_t(node));
-}
-
-
-bool AbstractNode::operator!=(const AbstractNode* node) const
-{
-	return (!(this->operator==(node)));
-}
-
-
-bool AbstractNode::operator<(const AbstractNode* node) const
-{
-	return (size_t(this) < size_t(node));
-}
-
-
-void AbstractNode::_forward_result_to_outputs()
-{
-	for (PortPairList& port_pair_lst : _outputs)
-		for (PortPair& port_pair : port_pair_lst)
-			port_pair.first->_inputs[port_pair.second] = _result_data;
-//			port_pair.first->_receive_data(port_pair.second, _result_data);
-
-	_result_data.clear();
-}
-
-
-//void AbstractNode::_receive_data(const int in_port_num, const Battlefield& data)
-//{
-//	_inputs[in_port_num] = data;
-//}
-
-
-bool AbstractNode::_is_valid_in_port_num(const int in_port_num) const
-{
-	return ((in_port_num >= 0)
-			&& (in_port_num < int(_inputs.size())));
-}
-
-
-bool AbstractNode::_is_valid_out_port_num(const int out_port_num) const
-{
-	return ((out_port_num >= 0)
-			&& (out_port_num < int(_outputs.size())));
+	return std::move(type);
 }
 
 

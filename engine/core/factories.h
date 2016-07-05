@@ -8,21 +8,21 @@
 
 
 using UnitFactory = Factory<std::string, AbstractUnit>;
+using NodeFactory = Factory<std::string, AbstractNode>;
 
 
-namespace std
-{
-	template <>
-	class hash<AbstractNode::Type>
-	{
-		public:
-			size_t operator()(const AbstractNode::Type& type) const
-			{
-				return hash<int>()(int(type));
-			}
-	};
-}
-using NodeFactory = Factory<AbstractNode::Type, AbstractNode>;
+//namespace std
+//{
+//	template <>
+//	class hash<AbstractNode::Type>
+//	{
+//		public:
+//			size_t operator()(const AbstractNode::Type& type) const
+//			{
+//				return hash<int>()(int(type));
+//			}
+//	};
+//}
 
 
 // __ENGINE_FACTORIES_H__

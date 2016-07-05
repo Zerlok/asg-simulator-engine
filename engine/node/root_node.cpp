@@ -11,7 +11,7 @@ RootNode* RootNode::cast(AbstractNode* node)
 }
 
 
-RootNode::RootNode(const Battlefield& data)
+RootNode::RootNode(const NodeData& data)
 	: AbstractNode(Type::root, 0, 1)
 {
 	_result_data = data;
@@ -41,14 +41,20 @@ RootNode::~RootNode()
 }
 
 
-const Battlefield& RootNode::execute()
+const NodeData& RootNode::execute()
 {
-	_forward_result_to_outputs();
+	_push_result_to_outputs();
 	return _result_data;
 }
 
 
-void RootNode::set_data(const Battlefield& data)
+Arguments RootNode::get_arguments() const
+{
+	return std::move(Arguments());
+}
+
+
+void RootNode::set_data(const NodeData& data)
 {
 	_result_data = data;
 }

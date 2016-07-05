@@ -16,7 +16,8 @@ class CmdMoveNode : public AbstractNode
 		CmdMoveNode(CmdMoveNode&& node);
 		~CmdMoveNode();
 
-		const Battlefield& execute();
+		const NodeData& execute() override;
+		Arguments get_arguments() const override;
 
 	private:
 		Point _direction;

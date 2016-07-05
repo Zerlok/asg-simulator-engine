@@ -19,6 +19,7 @@ RootNode* nodeutils::find_root(const Nodes& nodes)
 }
 
 
+// #TODO: rewrite level sort.
 Nodes nodeutils::sort_by_levels(Nodes& nodes)
 {
 	using NodeSet = std::set<AbstractNode*>;
