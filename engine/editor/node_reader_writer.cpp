@@ -142,10 +142,18 @@ void NodeWriter::write(std::ofstream& outfile, const Nodes& nodes) const
 
 void NodeWriter::_write_node_table(std::ofstream& outfile, const Nodes& nodes) const
 {
+	Arguments node_args;
 	for (const AbstractNode* node : nodes)
-		outfile << node->get_type()
-				<< stringutils::join(node->get_arguments(), nodeformat::separator)
-				<< std::endl;
+	{
+		node_args = node->get_arguments();
+		outfile << node->get_type();
+
+		if (!node_args.empty())
+			outfile << nodeformat::separator
+					<< stringutils::join(node_args, nodeformat::separator);
+
+		outfile << std::endl;
+	}
 
 	outfile << nodeformat::end_of_data << std::endl;
 }
@@ -172,16 +180,17 @@ void NodeWriter::_write_node_connections(std::ofstream& outfile, const Nodes& no
 				// Check for connections other nodes.
 				if (i != node_id)
 				{
-					// Find connected node and write input_port_num.
+					// Find input_port_num and write it, if i node is connected to current.
 					for (const AbstractNode::PortPair& pair : ports[out_port_num])
 						if (pair.first == nodes[i])
-							outfile << pair.second << nodeformat::separator;
+							outfile << pair.second;
 				}
 				// Write output_port_num.
 				else
 					outfile << nodeformat::output_node_symbol
-							<< out_port_num
-							<< nodeformat::separator;
+							<< out_port_num;
+
+				outfile << nodeformat::separator;
 			}
 
 			outfile.seekp(-1, std::ios::cur);

@@ -5,13 +5,13 @@
 
 
 CmdHoldNode::CmdHoldNode()
-	: AbstractNode(Type::cmd_hold, 1, 1)
+	: AbstractNode(Type::cmd_hold, 1, 0)
 {
 }
 
 
 CmdHoldNode::CmdHoldNode(const Arguments&)
-	: AbstractNode(Type::cmd_hold, 1, 1)
+	: AbstractNode(Type::cmd_hold, 1, 0)
 {
 }
 
@@ -40,7 +40,6 @@ const NodeData& CmdHoldNode::execute()
 	for (AbstractUnit* unit : _result_data[BattleSide::self])
 		unit->hold();
 
-	_push_result_to_outputs();
 	return _result_data;
 }
 

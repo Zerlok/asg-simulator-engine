@@ -77,7 +77,7 @@ const AbstractNode::Type& AbstractNode::get_type() const
 }
 
 
-const AbstractNode::InDatas& AbstractNode::get_input_datas() const
+const AbstractNode::InDatas& AbstractNode::get_input_data() const
 {
 	return _inputs;
 }

@@ -105,7 +105,7 @@ class Factory
 
 		Keys get_registered() const
 		{
-			Keys keys(_creators.size());
+			Keys keys;
 
 			for (const typename CreatorsMap::value_type& pair : _creators)
 				keys.push_back(pair.first);

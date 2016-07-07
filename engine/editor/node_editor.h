@@ -33,6 +33,7 @@ class NodeEditor
 		static const char COMMENT;
 		static const char SEPARATOR;
 		static const char PORT_SEPARATOR;
+		static const std::string INPUT_SYMBOL;
 		static const std::string CMD_EXIT;
 		static const std::string CMD_HELP;
 		static const std::string CMD_NEW;
@@ -52,6 +53,7 @@ class NodeEditor
 		NodeWriter _writer;
 		Nodes _nodes;
 
+		void _clear_nodes();
 		void _show_node(const AbstractNode* node) const;
 };
 

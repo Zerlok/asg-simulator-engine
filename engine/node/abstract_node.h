@@ -101,7 +101,7 @@ class AbstractNode
 		/*
 		 * Returns vector of input data of this node.
 		 */
-		const InDatas& get_input_datas() const;
+		const InDatas& get_input_data() const;
 
 		/*
 		 * Returns vector of output ports of this node.

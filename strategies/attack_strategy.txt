@@ -10,11 +10,10 @@
 # Nodes table
 # Format: Type | Arguments...
 
-0
-4|5|0
-3|[1, 0, 0]
-1|[0, 0, 0]
-6|1
+[ROOT]
+[UNITS_SELECT]|5|0|[SELF]
+[CMD_MOVE]|[1, 0, 0]
+[CMD_FIRE]|[0, 0, 0]
 [EOD]
 
 # Connections matrix
@@ -24,5 +23,4 @@
 -0|0|||||||
 |-0|0||||||
 ||-0|0|||||
-|||-0|0||||
 [EOD]

@@ -12,7 +12,7 @@ size_t pos(const std::string& data, const char s)
 }
 
 
-std::vector<std::string> stringutils::split(
+Strings stringutils::split(
 		const std::string& data,
 		const char separator,
 		const bool skip_empty_values)
@@ -44,46 +44,38 @@ std::vector<std::string> stringutils::split(
 
 
 std::string stringutils::join(
-		const std::vector<std::string>& data,
+		const Strings& data,
 		const char separator,
 		const bool skip_empty_values)
 {
+	if (data.empty())
+		return std::move(std::string());
+
 	std::stringstream ss;
-	for (const std::string& s : data)
+	size_t i;
+	for (i = 0; i < data.size()-1; ++i)
 		if (!skip_empty_values
-				|| !s.empty())
-			ss << s << separator;
+				|| !data[i].empty())
+			ss << data[i] << separator;
 
-	std::string result = ss.str();
-	if (!result.empty())
-		result.erase(result.end()-1);
+	ss << data[i];
+	return ss.str();
+}
 
-	return std::move(result);
+
+Strings stringutils::to_strings(const int& argc, char *argv[])
+{
+	Strings args;
+	for (int i = 0; i < argc; ++i)
+		args.push_back(argv[i]);
+
+	return std::move(args);
 }
 
 
 bool stringutils::startswith(const std::string& main, const std::string& substr)
 {
 	return (main.substr(0, substr.size()) == substr);
-}
-
-
-template<>
-std::ostream& operator<<(std::ostream& out, const std::vector<std::string>& vec)
-{
-	const size_t len = vec.size();
-	out << '[' << len << "] {";
-
-	if (len > 0)
-		out << '\'';
-
-	for (size_t i = 0; i < len; ++i)
-		out << vec[i] << "', '";
-
-	if (len > 0)
-		out << "\b\b\b";
-
-	return out << '}';
 }
 
 
@@ -96,4 +88,25 @@ bool operator==(const std::string& s1, const std::string& s2)
 bool operator!=(const std::string& s1, const std::string& s2)
 {
 	return (s1.compare(s2) != 0);
+}
+
+
+template<>
+std::ostream& operator<<(std::ostream& out, const Strings& vec)
+{
+	const size_t len = vec.size();
+	out << '[' << len << "] {";
+
+	if (len > 0)
+	{
+		size_t i;
+
+		out << '\'';
+		for (i = 0; i < len-1; ++i)
+			out << vec[i] << "', '";
+
+		out << vec[i] << '\'';
+	}
+
+	return out << '}';
 }

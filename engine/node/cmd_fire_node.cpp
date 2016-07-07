@@ -8,14 +8,14 @@ const Point CmdFireNode::battlefield_size = Point(5, 0, 0);
 
 
 CmdFireNode::CmdFireNode(const Point& pos)
-	: AbstractNode(Type::cmd_fire, 1, 1),
+	: AbstractNode(Type::cmd_fire, 1, 0),
 	  _target_pos(pos)
 {
 }
 
 
 CmdFireNode::CmdFireNode(const Arguments& args)
-	: AbstractNode(Type::cmd_fire, 1, 1),
+	: AbstractNode(Type::cmd_fire, 1, 0),
 	  _target_pos()
 {
 	Point pos;
@@ -82,7 +82,6 @@ const NodeData& CmdFireNode::execute()
 		for (size_t i = 0; i < dmg; ++i)
 			targets[i]->receive_damage(1);
 
-	_push_result_to_outputs();
 	return _result_data;
 }
 
