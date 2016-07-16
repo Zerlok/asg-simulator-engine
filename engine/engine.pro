@@ -3,6 +3,8 @@ CONFIG += console gnu++11
 CONFIG -= app_bundle
 CONFIG -= qt
 
+LIBS += -lgtest -lpthread
+
 QMAKE_CXXFLAGS += -std=gnu++11
 
 SOURCES += \

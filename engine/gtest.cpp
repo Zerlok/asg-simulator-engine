@@ -8,8 +8,10 @@
 #include "common/utils.h"
 
 #include "node/node_utils.h"
-#include "editor/node_reader_writer.h"
-#include "core/factories.h"
+#include "node/abstract_node.h"
+#include "node/root_node.h"
+#include "node/cmd_move_node.h"
+#include "node/end_node.h"
 
 TEST(Common, Point)
 {
@@ -109,19 +111,70 @@ TEST(Common, StringUtilsJoin)
 }
 
 TEST(Node, SortByLevels) {
-    NodeFactory factory;
-    NodeReader reader(factory);
+    Point p(0, 0, 0);
+    Nodes nodes;
+    nodes.push_back(new EndNode(2));
+    nodes.push_back(new CmdMoveNode);
+    nodes.push_back(new EndNode(2));
+    nodes.push_back(new CmdMoveNode);
+    nodes.push_back(new CmdMoveNode);
+    nodes.push_back(new CmdMoveNode);
+    nodes.push_back(new CmdMoveNode);
+    nodes.push_back(new CmdMoveNode);
+    nodes.push_back(new CmdMoveNode);
+    nodes.push_back(new RootNode({""}));
 
-    Nodes initial_nodes = reader.read("tests/strategies/defence_strategy.txt");
-    Nodes sorted_nodes = nodeutils::sort_by_levels(initial_nodes);
-    std::vector<size_t> sorted_order;
-    for(size_t i = 0; i < initial_nodes.size(); ++i)
+    nodes[9]->link(0, 0, *nodes[8]);
+    nodes[9]->link(0, 0, *nodes[7]);
+    nodes[9]->link(0, 0, *nodes[4]);
+    nodes[9]->link(0, 0, *nodes[6]);
+    nodes[9]->link(0, 1, *nodes[0]);
+    nodes[8]->link(0, 0, *nodes[5]);
+    nodes[5]->link(0, 0, *nodes[3]);
+    nodes[3]->link(0, 0, *nodes[1]);
+    nodes[1]->link(0, 0, *nodes[0]);
+    nodes[7]->link(0, 0, *nodes[2]);
+    nodes[6]->link(0, 1, *nodes[4]);
+    nodes[4]->link(0, 1, *nodes[2]);
+
+    Nodes sorted_nodes = nodeutils::sort_by_levels(nodes);
+
+    EXPECT_TRUE(sorted_nodes[0] == nodes[9]);
+
+    EXPECT_TRUE(
+        sorted_nodes[1] == nodes[8] ||
+        sorted_nodes[1] == nodes[7] ||
+        sorted_nodes[1] == nodes[6]);
+    EXPECT_TRUE(
+        sorted_nodes[2] == nodes[8] ||
+        sorted_nodes[2] == nodes[7] ||
+        sorted_nodes[2] == nodes[6]);
+    EXPECT_TRUE(
+        sorted_nodes[3] == nodes[8] ||
+        sorted_nodes[3] == nodes[7] ||
+        sorted_nodes[3] == nodes[6]);
+
+    EXPECT_TRUE(
+        sorted_nodes[4] == nodes[5] ||
+        sorted_nodes[4] == nodes[4]);
+    EXPECT_TRUE(
+        sorted_nodes[5] == nodes[5] ||
+        sorted_nodes[5] == nodes[4]);
+
+    EXPECT_TRUE(
+        sorted_nodes[6] == nodes[3] ||
+        sorted_nodes[6] == nodes[2]);
+    EXPECT_TRUE(
+        sorted_nodes[7] == nodes[3] ||
+        sorted_nodes[7] == nodes[2]);
+
+    EXPECT_TRUE(sorted_nodes[8] == nodes[1]);
+
+    EXPECT_TRUE(sorted_nodes[9] == nodes[0]);
+
+    for(auto node : nodes)
     {
-        auto match = find(sorted_nodes.begin(), sorted_nodes.end(), initial_nodes[i]);
-        EXPECT_FALSE(match == sorted_nodes.end());
-
-        size_t index = match - sorted_nodes.begin();
-        sorted_order.push_back(index);
+        delete node;
     }
 }
 
