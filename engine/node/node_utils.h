@@ -11,7 +11,6 @@ namespace nodeutils
 {
 	RootNode* find_root(const Nodes& nodes);
 	Nodes sort_by_levels(Nodes& nodes);
-    std::vector<size_t> review_subtree(AbstractNode* root, Nodes& nodes);
 }
 
 

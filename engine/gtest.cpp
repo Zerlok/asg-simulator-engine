@@ -8,10 +8,8 @@
 #include "common/utils.h"
 
 #include "node/node_utils.h"
-#include "node/abstract_node.h"
 #include "node/root_node.h"
-#include "node/cmd_move_node.h"
-#include "node/end_node.h"
+#include "node/test_node.h"
 
 TEST(Common, Point)
 {
@@ -110,19 +108,19 @@ TEST(Common, StringUtilsJoin)
     EXPECT_EQ("", result);
 }
 
+
 TEST(Node, SortByLevels) {
-    Point p(0, 0, 0);
     Nodes nodes;
-    nodes.push_back(new EndNode(2));
-    nodes.push_back(new CmdMoveNode);
-    nodes.push_back(new EndNode(2));
-    nodes.push_back(new CmdMoveNode);
-    nodes.push_back(new CmdMoveNode);
-    nodes.push_back(new CmdMoveNode);
-    nodes.push_back(new CmdMoveNode);
-    nodes.push_back(new CmdMoveNode);
-    nodes.push_back(new CmdMoveNode);
-    nodes.push_back(new RootNode({""}));
+    nodes.push_back(new TestNode(2, 0));
+    nodes.push_back(new TestNode);
+    nodes.push_back(new TestNode(2, 0));
+    nodes.push_back(new TestNode);
+    nodes.push_back(new TestNode);
+    nodes.push_back(new TestNode);
+    nodes.push_back(new TestNode);
+    nodes.push_back(new TestNode);
+    nodes.push_back(new TestNode);
+    nodes.push_back(new RootNode);
 
     nodes[9]->link(0, 0, *nodes[8]);
     nodes[9]->link(0, 0, *nodes[7]);

@@ -3,8 +3,6 @@ CONFIG += console gnu++11
 CONFIG -= app_bundle
 CONFIG -= qt
 
-LIBS += -lgtest -lpthread
-
 QMAKE_CXXFLAGS += -std=gnu++11
 
 SOURCES += \
@@ -29,7 +27,8 @@ SOURCES += \
 	validator/node_validator.cpp \
 	node/node_expression.cpp \
 	main.cpp \
-	gtest.cpp
+	gtest.cpp \
+    node/test_node.cpp
 #    core/config.cpp
 
 HEADERS += \
@@ -55,7 +54,8 @@ HEADERS += \
 	editor/node_reader_writer.h \
     editor/node_editor.h \
 	validator/node_validator.h \
-	node/node_expression.h
+	node/node_expression.h \
+    node/test_node.h
 #    core/config.h
 
 
