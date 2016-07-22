@@ -42,6 +42,8 @@ std::ostream& operator<<(std::ostream& out, const std::vector<T>& vec)
 	return out << '}';
 }
 
+std::ostream& operator<<(std::ostream& out, const Strings& vec);
+
 
 // __ASG_UTILS_H__
 #endif

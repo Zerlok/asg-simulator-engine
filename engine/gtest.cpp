@@ -11,6 +11,15 @@
 #include "editor/node_reader_writer.h"
 #include "core/factories.h"
 
+#include "node/abstract_node.h"
+#include "node/cmd_fire_node.h"
+#include "node/cmd_hold_node.h"
+#include "node/cmd_move_node.h"
+#include "node/units_select_node.h"
+#include "node/root_node.h"
+
+#include "output/json_tools.hpp"
+
 TEST(Common, Point)
 {
     Point p1 {1, 2, 3};
@@ -108,11 +117,29 @@ TEST(Common, StringUtilsJoin)
     EXPECT_EQ("", result);
 }
 
+template <typename NodeType>
+void reg_type (AbstractNode::Type type, NodeFactory &factory)
+{
+	std::ostringstream oss;
+	oss << type;
+	factory.registerate<NodeType>( oss.str() );
+}
+
 TEST(Node, SortByLevels) {
     NodeFactory factory;
     NodeReader reader(factory);
 
-    Nodes initial_nodes = reader.read("tests/strategies/defence_strategy.txt");
+	reg_type<RootNode> (AbstractNode::Type::root, factory);
+	reg_type<CmdFireNode> (AbstractNode::Type::cmd_fire, factory);
+	reg_type<CmdHoldNode> (AbstractNode::Type::cmd_hold, factory);
+	reg_type<CmdMoveNode> (AbstractNode::Type::cmd_move, factory);
+	reg_type<UnitsSelectNode> (AbstractNode::Type::units_select, factory);
+
+	std::ostringstream oss;
+	oss << AbstractNode::Type::root;
+	factory.registerate<RootNode>( oss.str() );
+
+	Nodes initial_nodes = reader.read("strategies/defence_strategy.txt");
     Nodes sorted_nodes = nodeutils::sort_by_levels(initial_nodes);
     std::vector<size_t> sorted_order;
     for(size_t i = 0; i < initial_nodes.size(); ++i)
@@ -193,6 +220,63 @@ TEST(Unit, UnitReader)
 }
 */
 
+TEST(Output, JsonWriter)
+{
+	std::ostringstream oss;
+	JsonWriter writer (oss);
+
+	writer.print (234);
+	ASSERT_EQ ("234", oss.str());
+	oss.str ("");
+
+	writer.print (3.4);
+	ASSERT_EQ ("3.4", oss.str());
+	oss.str ("");
+
+	/* Fun fact: scientific notation is implementation-defined
+	 * TODO: regex-check it
+	 * Regex to do it: ([\+\-]?([0-9])*\.?([0-9])+|[\+\-]?([0-9])+\.?([0-9])*)[eE][\+\-]?([0-9])+
+	writer.print (3e27);
+	ASSERT_TRUE ("3e27" == oss.str() || "3E27" == oss.str());
+	oss.str ("");
+	*/
+
+	writer.print ('c');
+	ASSERT_EQ ("\"c\"", oss.str());
+	oss.str ("");
+
+	writer.print (true);
+	ASSERT_EQ ("true", oss.str());
+	oss.str ("");
+
+	writer.print (false);
+	ASSERT_EQ ("false", oss.str());
+	oss.str ("");
+
+	writer.print ("str \"");
+	ASSERT_EQ ("\"str \\\"\"", oss.str());
+	oss.str ("");
+
+	std::string str = "STRing! \t \\ \" / \b \f \n \r";
+	writer.print (str);
+	ASSERT_EQ ("\"STRing! \\t \\\\ \\\" \\/ \\b \\f \\n \\r\"", oss.str());
+	oss.str ("");
+
+	std::pair <std::string, int> pair = {"label", 42};
+	writer.print (pair);
+	ASSERT_EQ ("\"label\" : 42", oss.str());
+	oss.str ("");
+
+	JsonWriter writer2 (std::cout);
+	std::vector <std::function<void()>> instr_set {
+		[&] () mutable {writer2.print (std::pair <std::string, int>{"label", 42});},
+		[&] () mutable {writer2.print (std::pair <std::string, float>{"label2", 42.2});},
+		[&] () mutable {writer2.print (std::vector <std::string> {"Behold", "of", "teh", "power"}, true);}
+	};
+	writer2.print (instr_set, true);
+//	ASSERT_EQ ("\"label\" : 42", oss.str());
+//	oss.str ("");
+}
 
 int main(int argc, char *argv[])
 {

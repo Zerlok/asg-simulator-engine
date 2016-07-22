@@ -26,6 +26,7 @@ SOURCES += \
 	editor/node_reader_writer.cpp \
 	validator/node_validator.cpp \
 	node/node_expression.cpp \
+	output/logger.cpp \
 	main.cpp \
 	gtest.cpp
 #    core/config.cpp
@@ -33,9 +34,9 @@ SOURCES += \
 HEADERS += \
 	common/point.h \
 	common/range.h \
+	common/utils.h \
 	common/singleton.h \
 	common/factory.h \
-	common/utils.h \
 	core/types.h \
 	core/factories.h \
 	unit/abstract_unit.h \
@@ -53,7 +54,9 @@ HEADERS += \
 	editor/node_reader_writer.h \
     editor/node_editor.h \
 	validator/node_validator.h \
-	node/node_expression.h
+	node/node_expression.h \
+	output/logger.h \
+    output/json_tools.hpp
 #    core/config.h
 
 

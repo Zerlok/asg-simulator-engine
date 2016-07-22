@@ -89,9 +89,10 @@ bool operator!=(const std::string& s1, const std::string& s2)
 {
 	return (s1.compare(s2) != 0);
 }
-
-
-template<>
+/**
+  TODO: figure out what's wrong
+*/
+//template<>
 std::ostream& operator<<(std::ostream& out, const Strings& vec)
 {
 	const size_t len = vec.size();

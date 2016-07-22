@@ -1,6 +1,10 @@
 #include <sstream>
 #include "types.h"
 #include "common/utils.h"
+// Note: the following two files must be included after
+//       types.h to complete the abstract classes' declaration
+#include "node/abstract_node.h"
+#include "unit/abstract_unit.h"
 
 
 std::ostream&operator<<(std::ostream& out, const BattleSide& side)
