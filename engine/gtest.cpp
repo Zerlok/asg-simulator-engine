@@ -220,16 +220,102 @@ TEST(Unit, UnitReader)
 }
 */
 
+struct ComplexTestObject
+{
+	int a = 23;
+	float b = 7.2;
+	char c = 'n';
+	bool d = true;
+	std::string name = "object";
+	std::vector <ComplexTestObject> vec;
+};
+
+template<>
+struct JsonWriter::ObjectPrinter <ComplexTestObject>
+{
+	// A flag to detect the extension
+	static constexpr bool is_printable = true;
+
+	/*
+	 * Generates printing instructions: an array of print_X_to_string
+	 * results (TODO: only X = pair?).
+	 * `multiline` properties intended to be set to true *must* be set to
+	 * `multiline` to enable single-line printing. Otherwise, single-line
+	 * output will be JSON-correct, but not visually structured (and not
+	 * single-line).
+	*/
+	static std::vector <std::string> generate_object_inners (const ComplexTestObject &what, bool multiline)
+	{
+		return {
+			print_pair_to_string ("a", what.a, false),
+			print_pair_to_string ("b", what.b, false),
+			print_pair_to_string ("c", what.c, false),
+			print_pair_to_string ("d", what.d, false),
+			print_pair_to_string ("name", what.name, false),
+			print_pair_to_string ("vec", what.vec, multiline, multiline)
+		};
+	}
+};
+
+struct SimpleTestObject
+{
+	int a;
+	int b;
+};
+
+template<>
+struct JsonWriter::ObjectPrinter <SimpleTestObject>
+{
+	static constexpr bool is_printable = true;
+	static std::vector <std::string> generate_object_inners
+			(const SimpleTestObject &what, bool multiline)
+	{
+		return {
+			print_pair_to_string ("a", what.a, false),
+			print_pair_to_string ("b", what.b, false),
+		};
+	}
+};
+
+struct RegularTestObject
+{
+	int num = 1;
+	std::vector<int> single_line { 3, 2, 1 };
+	std::vector<int> multiline { 4, 5, 6 };
+	std::vector<SimpleTestObject> single_complex { {3, 2}, {2, -1} };
+	std::vector<SimpleTestObject> multi_single { {30, 20}, {20, -10} };
+	std::vector<SimpleTestObject> multi_complex { {300, 200}, {200, -100} };
+};
+
+template<>
+struct JsonWriter::ObjectPrinter <RegularTestObject>
+{
+	static constexpr bool is_printable = true;
+	static std::vector <std::string> generate_object_inners
+			(const RegularTestObject &what, bool multiline)
+	{
+		return {
+			print_pair_to_string ("num", what.num, false),
+			print_pair_to_string ("single_line", what.single_line, false, false),
+			print_pair_to_string ("multiline", what.multiline, false, false),
+			// `true` serves for test purposes only and should not affect anything
+			print_pair_to_string ("single_complex", what.single_complex, false, true),
+			print_pair_to_string ("multi_single", what.multi_single, multiline, false),
+			print_pair_to_string ("multi_complex", what.multi_complex, multiline, multiline),
+		};
+	}
+};
+
 TEST(Output, JsonWriter)
 {
 	std::ostringstream oss;
 	JsonWriter writer (oss);
 
-	writer.print (234);
+	writer.print_object (234);
 	ASSERT_EQ ("234", oss.str());
 	oss.str ("");
 
-	writer.print (3.4);
+	writer.print_object (3.4);
 	ASSERT_EQ ("3.4", oss.str());
 	oss.str ("");
 
@@ -241,41 +327,165 @@ TEST(Output, JsonWriter)
 	oss.str ("");
 	*/
 
-	writer.print ('c');
+	writer.print_object ('c');
 	ASSERT_EQ ("\"c\"", oss.str());
 	oss.str ("");
 
-	writer.print (true);
+	writer.print_object (true);
 	ASSERT_EQ ("true", oss.str());
 	oss.str ("");
 
-	writer.print (false);
+	writer.print_object (false);
 	ASSERT_EQ ("false", oss.str());
 	oss.str ("");
 
-	writer.print ("str \"");
-	ASSERT_EQ ("\"str \\\"\"", oss.str());
-	oss.str ("");
-
-	std::string str = "STRing! \t \\ \" / \b \f \n \r";
-	writer.print (str);
+	// Note: this is not a std::string test, but a const char[] one
+	writer.print_object ("STRing! \t \\ \" / \b \f \n \r");
 	ASSERT_EQ ("\"STRing! \\t \\\\ \\\" \\/ \\b \\f \\n \\r\"", oss.str());
 	oss.str ("");
 
-	std::pair <std::string, int> pair = {"label", 42};
-	writer.print (pair);
-	ASSERT_EQ ("\"label\" : 42", oss.str());
+	std::string str {"STRing! \t \\ \" / \b \f \n \r"};
+	writer.print_object (str);
+	ASSERT_EQ ("\"STRing! \\t \\\\ \\\" \\/ \\b \\f \\n \\r\"", oss.str());
 	oss.str ("");
 
-	JsonWriter writer2 (std::cout);
-	std::vector <std::function<void()>> instr_set {
-		[&] () mutable {writer2.print (std::pair <std::string, int>{"label", 42});},
-		[&] () mutable {writer2.print (std::pair <std::string, float>{"label2", 42.2});},
-		[&] () mutable {writer2.print (std::vector <std::string> {"Behold", "of", "teh", "power"}, true);}
+	std::pair <std::string, float> pair = {"label", 42.2};
+	writer.print_pair (pair);
+	ASSERT_EQ ("\"label\" : 42.2", oss.str());
+	oss.str ("");
+
+	SimpleTestObject simple {35, 46};
+	writer.print_object (simple, false);
+	ASSERT_EQ ("{\"a\" : 35, \"b\" : 46}", oss.str());
+	oss.str ("");
+
+	std::vector <std::string> simple_lines {
+		"{",
+		"    \"a\" : 35,",
+		"    \"b\" : 46",
+		"}"
 	};
-	writer2.print (instr_set, true);
-//	ASSERT_EQ ("\"label\" : 42", oss.str());
-//	oss.str ("");
+
+	writer.print_object (simple, true);
+	std::istringstream iss (oss.str());
+	for (std::string &str : simple_lines) {
+		std::string line;
+		std::getline (iss, line);
+		ASSERT_EQ (str, line);
+	}
+	oss.str ("");
+
+	std::vector <std::string> regular_lines {
+		"{",
+		"    \"num\" : 1,",
+		"    \"single_line\" : [3, 2, 1],",
+		"    \"multiline\" : [4, 5, 6],",
+		"    \"single_complex\" : [{\"a\" : 3, \"b\" : 2}, {\"a\" : 2, \"b\" : -1}],",
+		"    \"multi_single\" : [",
+		"        {\"a\" : 30, \"b\" : 20},",
+		"        {\"a\" : 20, \"b\" : -10}",
+		"    ],",
+		"    \"multi_complex\" : [",
+		"        {",
+		"            \"a\" : 300,",
+		"            \"b\" : 200",
+		"        },",
+		"        {",
+		"            \"a\" : 200,",
+		"            \"b\" : -100",
+		"        }",
+		"    ]",
+		"}"
+	};
+
+	writer.print_object (RegularTestObject());
+	iss.str( oss.str() );
+	iss.clear(); // Clear EOF flag
+	for (std::string &str : regular_lines) {
+		std::string line;
+		std::getline (iss, line);
+		ASSERT_EQ (str, line);
+	}
+	oss.str ("");
+
+	std::vector <std::string> complex_lines {
+		"{",
+		"    \"a\" : 23,",
+		"    \"b\" : 7.2,",
+		"    \"c\" : \"n\",",
+		"    \"d\" : true,",
+		"    \"name\" : \"object\",",
+		"    \"vec\" : [",
+		"        {",
+		"            \"a\" : 23,",
+		"            \"b\" : 7.2,",
+		"            \"c\" : \"n\",",
+		"            \"d\" : true,",
+		"            \"name\" : \"inner1\",",
+		"            \"vec\" : [",
+		"                {",
+		"                    \"a\" : 23,",
+		"                    \"b\" : 7.2,",
+		"                    \"c\" : \"n\",",
+		"                    \"d\" : true,",
+		"                    \"name\" : \"inner1_inner\",",
+		"                    \"vec\" : []",
+		"                }",
+		"            ]",
+		"        },",
+		"        {",
+		"            \"a\" : 23,",
+		"            \"b\" : 7.2,",
+		"            \"c\" : \"n\",",
+		"            \"d\" : true,",
+		"            \"name\" : \"inner2\",",
+		"            \"vec\" : []",
+		"        }",
+		"    ]",
+		"}"
+	};
+
+	ComplexTestObject complex;
+	complex.vec.push_back(ComplexTestObject());
+	complex.vec[0].name = "inner1";
+	complex.vec.push_back(ComplexTestObject());
+	complex.vec[1].name = "inner2";
+	complex.vec[0].vec.push_back(ComplexTestObject());
+	complex.vec[0].vec[0].name = "inner1_inner";
+	writer.print_object (complex, true);
+
+	iss.str( oss.str() );
+	iss.clear(); // Clear EOF flag
+	for (std::string &str : complex_lines) {
+		std::string line;
+		std::getline (iss, line);
+		ASSERT_EQ (str, line);
+	}
+	oss.str ("");
+
+	std::string complex_single_line
+		= std::string("{")
+			+ "\"a\" : 23, " + "\"b\" : 7.2, " + "\"c\" : \"n\", " + "\"d\" : true, " +
+			"\"name\" : \"object\", " +
+			"\"vec\" : [" +
+				"{" + "\"a\" : 23, " + "\"b\" : 7.2, " + "\"c\" : \"n\", " + "\"d\" : true, " +
+				"\"name\" : \"inner1\", " +
+				"\"vec\" : [" +
+					"{" + "\"a\" : 23, " + "\"b\" : 7.2, " + "\"c\" : \"n\", " + "\"d\" : true, " +
+					"\"name\" : \"inner1_inner\", " +
+					"\"vec\" : []" +
+					"}" + "]" +
+				"}, " +
+				"{" + "\"a\" : 23, " + "\"b\" : 7.2, " + "\"c\" : \"n\", " + "\"d\" : true, " +
+					"\"name\" : \"inner2\", " +
+					"\"vec\" : []" +
+				"}" +
+			"]" +
+		"}";
+
+	writer.print_object (complex, false);
+	ASSERT_EQ (complex_single_line, oss.str());
+	oss.str ("");
 }
 
 int main(int argc, char *argv[])
