@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 			  << "Flags:" << std::endl
 			  << " -h|--help     - show this help." << std::endl
 			  << " -s|--simulate - run simulator with 4 arguments (filepaths to):" << std::endl
-			  << "                 [attacker units] [attacker strategyy] [defender units] [defender strategy]" << std::endl
+			  << "                 [attacker units] [attacker strategy] [defender units] [defender strategy]" << std::endl
 			  << " -e|--editor   - run node editor. 2 arguments are optional:" << std::endl
 			  << "                 [input filename] [output filename]" << std::endl;
 	return 0;

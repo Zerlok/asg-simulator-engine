@@ -63,31 +63,35 @@ void NodeEditor::run()
 			break;
 
 		Arguments args = stringutils::split(line, SEPARATOR);
+		std::string cmd = args.front();
 		args.erase(args.begin());
 
-		if (line == CMD_TABLE)
-			show_all_nodes(args);
+		if (cmd == CMD_TABLE)
+			show_nodes(args);
 
-		else if (stringutils::startswith(line, CMD_NEW))
+		else if (cmd == CMD_NEW)
 			create_node(args);
 
-		else if (stringutils::startswith(line, CMD_DEL))
+		else if (cmd == CMD_DEL)
 			delete_node(args);
 
-		else if (stringutils::startswith(line, CMD_LINK))
+		else if (cmd == CMD_LINK)
 			link_nodes(args);
 
-		else if (stringutils::startswith(line, CMD_UNLINK))
+		else if (cmd == CMD_UNLINK)
 			unlink_nodes(args);
 
-		else if (stringutils::startswith(line, CMD_SAVE))
+		else if (cmd == CMD_SAVE)
 			save(args);
 
-		else if (stringutils::startswith(line, CMD_LOAD))
+		else if (cmd == CMD_LOAD)
 			load(args);
 
-		else if (stringutils::startswith(line, CMD_HELP))
+		else if (cmd == CMD_HELP)
 			help(args);
+
+		else
+			_output << "Unknown command: " << cmd << std::endl;
 
 		_output << INPUT_SYMBOL;
 		_output.flush();
@@ -95,7 +99,7 @@ void NodeEditor::run()
 }
 
 
-void NodeEditor::show_all_nodes(const Arguments& args) const
+void NodeEditor::show_nodes(const Arguments& args) const
 {
 	if (!args.empty())
 	{
@@ -133,7 +137,7 @@ void NodeEditor::create_node(const Arguments& args)
 	try
 	{
 		_nodes.push_back(_factory.create(node_type, creator_args));
-		_output << _nodes.size() << " node was created." << std::endl;
+		_output << "Node (" << _nodes.size()-1 << ") was created." << std::endl;
 	}
 	catch (std::exception& e)
 	{
@@ -151,25 +155,11 @@ void NodeEditor::delete_node(const Arguments& args)
 						? (i)
 						: (i + len));
 
-	// Delete all connections with this node.
-	AbstractNode::OutPorts output_ports;
-	for (AbstractNode* node : _nodes)
-	{
-		if (node != _nodes[idx])
-		{
-			output_ports = node->get_output_ports();
-			for (size_t out_port_num = 0;
-				 out_port_num < output_ports.size();
-				 ++out_port_num)
-				for (AbstractNode::PortPair& port_pair : output_ports[out_port_num])
-					if (port_pair.first == _nodes[idx])
-						node->unlink(out_port_num, port_pair.second, *(port_pair.first));
-		}
-	}
-
+	_clear_node_links(_nodes[idx]);
 	delete _nodes[idx];
+
 	_nodes.erase(_nodes.begin() + idx);
-	_output << idx << " node was deleted." << std::endl;
+	_output << "Node (" << idx << ") was deleted." << std::endl;
 }
 
 
@@ -257,7 +247,7 @@ void NodeEditor::help(const Arguments& args)
 	{
 		_output << "Available nodes' types:" << std::endl;
 		for (const NodeFactory::Keys::value_type& node_name : _factory.get_registered())
-			_output << "  - " << node_name << std::endl;
+			_output << "  " << node_name << std::endl;
 	}
 }
 
@@ -271,10 +261,63 @@ void NodeEditor::_clear_nodes()
 }
 
 
+void NodeEditor::_clear_node_links(AbstractNode* node)
+{
+	AbstractNode::OutPorts output_ports;
+	for (AbstractNode* n : _nodes)
+	{
+		if (n != node)
+		{
+			output_ports = n->get_output_ports();
+			for (size_t out_port_num = 0;
+				 out_port_num < output_ports.size();
+				 ++out_port_num)
+				for (AbstractNode::PortPair& port_pair : output_ports[out_port_num])
+					if (port_pair.first == node)
+						n->unlink(out_port_num, port_pair.second, *(port_pair.first));
+		}
+	}
+}
+
+
+size_t NodeEditor::_get_node_index(AbstractNode* node) const
+{
+	for (size_t i = 0; i < _nodes.size(); ++i)
+		if (_nodes[i] == node)
+			return i;
+
+	return 0;
+}
+
+
 void NodeEditor::_show_node(const AbstractNode* node) const
 {
-	// #TODO: add connections view.
-	_output << node->get_type() << " args: "
-			<< node->get_arguments()
-			<< std::endl;
+	_output << node->get_type()
+			<< " args: " << node->get_arguments()
+			<< " ports: ";
+
+	const AbstractNode::OutPorts ports = node->get_output_ports();
+
+	if (ports.empty())
+	{
+		_output << "none" << std::endl;
+		return;
+	}
+
+	_output << " ports: ";
+	AbstractNode::PortPairs port;
+	for (size_t i = 0; i < ports.size(); ++i)
+	{
+		port = ports[i];
+		if (port.empty())
+			continue;
+
+		_output << i << " -> {";
+		for (size_t j = 0; j < port.size()-1; ++j)
+			_output << _get_node_index(port[j].first) << ':' << port[j].second << ' ';
+
+		_output << _get_node_index(port.back().first) << ':' << port.back().second << "}; ";
+	}
+
+	_output << std::endl;
 }

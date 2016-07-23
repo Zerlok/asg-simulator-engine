@@ -20,7 +20,7 @@ class NodeEditor
 
 		void run();
 
-		void show_all_nodes(const Arguments& args) const;
+		void show_nodes(const Arguments& args) const;
 		void create_node(const Arguments& args);
 		void delete_node(const Arguments& args);
 		void link_nodes(const Arguments& args);
@@ -54,6 +54,8 @@ class NodeEditor
 		Nodes _nodes;
 
 		void _clear_nodes();
+		void _clear_node_links(AbstractNode* node);
+		size_t _get_node_index(AbstractNode* node) const;
 		void _show_node(const AbstractNode* node) const;
 };
 
