@@ -11,6 +11,10 @@
 #include "node/root_node.h"
 #include "node/test_node.h"
 
+#include "unit/abstract_unit.h"
+#include "unit/test_unit.h"
+#include "unit/battleship_unit.h"
+
 TEST(Common, Point)
 {
     Point p1 {1, 2, 3};
@@ -109,19 +113,28 @@ TEST(Common, StringUtilsJoin)
 }
 
 
-TEST(Node, SortByLevels) {
+TEST(Node, SortByLevels)
+{
     Nodes nodes;
     nodes.push_back(new TestNode(2, 0));
+    nodes.push_back(new TestNode(2, 1));
+    nodes.push_back(new TestNode(3, 0));
     nodes.push_back(new TestNode);
-    nodes.push_back(new TestNode(2, 0));
+    nodes.push_back(new TestNode(3, 1));
+    nodes.push_back(new TestNode(1, 2));
     nodes.push_back(new TestNode);
-    nodes.push_back(new TestNode);
-    nodes.push_back(new TestNode);
-    nodes.push_back(new TestNode);
-    nodes.push_back(new TestNode);
-    nodes.push_back(new TestNode);
+    nodes.push_back(new TestNode(1, 2));
+    nodes.push_back(new TestNode(1, 2));
     nodes.push_back(new RootNode);
 
+/*
+    -0|0||0||0|||
+    |-0|0||||||
+    |||-0|0||||
+    |||||-0|0||
+    ||||||-0|0|
+    [EOD]
+*/
     nodes[9]->link(0, 0, *nodes[8]);
     nodes[9]->link(0, 0, *nodes[7]);
     nodes[9]->link(0, 0, *nodes[4]);
@@ -226,23 +239,92 @@ TEST(Node, NodeReader)
 }
 
 
-TEST(Unit, AbstractUnit)
-{
-
-}
-
-
-TEST(Unit, NormalUnit)
-{
-
-}
-
-
 TEST(Unit, UnitReader)
 {
 
 }
 */
+
+
+TEST(Unit, AbstractUnit)
+{
+	/*
+	 * TO DO
+	 * Calculating methods.
+	 * Battle methods.
+	 * Getters.
+	*/
+
+	TestUnit* unit;
+
+	// Calculating methods.
+
+	/* How should i test this shit?.. */
+
+	unit = new TestUnit;
+	delete unit;
+
+	// Status field.
+
+	/*
+	 * Moving and attacking actions perform instantly.
+	*/
+
+	unit = new TestUnit;
+	EXPECT_TRUE(unit->_status == std::set<Action>({Holding}));
+	unit->fire();
+	EXPECT_TRUE(unit->_status == std::set<Action>({Holding}));
+	unit->fire();
+	EXPECT_TRUE(unit->_status == std::set<Action>({Holding}));
+	unit->hold();
+	EXPECT_TRUE(unit->_status == std::set<Action>({Holding}));
+	unit->hold();
+	EXPECT_TRUE(unit->_status == std::set<Action>({Holding}));
+	unit->move_to(zero);
+	EXPECT_TRUE(unit->_status == std::set<Action>({Holding}));
+	delete unit;
+
+	// Battle methods.
+
+	// Getters.
+}
+
+
+TEST(Unit, TestUnit)
+{
+	/*
+	 * All constructors of in game classes (such as Fighter or Battleship)
+	 * can be tested on instance of the Test class and there is no need
+	 * for individual tests for them (because of the same class structure).
+	*/
+
+	Point zero;
+	Point point(10, 20);
+	TestUnit other(point);
+	TestUnit* unit;
+
+	// Constructors.
+	unit = new TestUnit;
+	EXPECT_TRUE(unit->_pos == zero);
+	delete unit;
+
+	unit = new TestUnit(point);
+	EXPECT_TRUE(unit->_pos == point);
+	delete unit;
+
+	unit = new TestUnit({"Hello", "world!"});
+	EXPECT_TRUE(unit->_pos == zero);
+	delete unit;
+
+	unit = new TestUnit(other);
+	EXPECT_TRUE(unit->_pos == point);
+	delete unit;
+
+	unit = new TestUnit;
+	EXPECT_TRUE(unit->_class_stats == TestUnitStats);
+	EXPECT_TRUE(unit->_status == std::set<Action>({Holding}));
+	delete unit;
+}
 
 
 int main(int argc, char *argv[])

@@ -11,7 +11,6 @@ SOURCES += \
 	common/utils.cpp \
 	core/types.cpp \
 	unit/abstract_unit.cpp \
-	unit/normal_unit.cpp \
 	unit/unit_reader.cpp \
 	node/abstract_node.cpp \
 	node/root_node.cpp \
@@ -28,7 +27,12 @@ SOURCES += \
 	node/node_expression.cpp \
 	main.cpp \
 	gtest.cpp \
-    node/test_node.cpp
+    node/test_node.cpp \
+    unit/battleship_unit.cpp \
+    unit/normal_unit.cpp \
+    unit/test_unit.cpp \
+    unit/fighter_unit.cpp \
+    unit/unit_stats.cpp
 #    core/config.cpp
 
 HEADERS += \
@@ -40,7 +44,6 @@ HEADERS += \
 	core/types.h \
 	core/factories.h \
 	unit/abstract_unit.h \
-	unit/normal_unit.h \
 	unit/unit_reader.h \
 	node/abstract_node.h \
 	node/root_node.h \
@@ -55,7 +58,12 @@ HEADERS += \
     editor/node_editor.h \
 	validator/node_validator.h \
 	node/node_expression.h \
-    node/test_node.h
+    node/test_node.h \
+    unit/battleship_unit.h \
+    unit/unit_stats.h \
+    unit/normal_unit.h \
+    unit/test_unit.h \
+    unit/fighter_unit.h
 #    core/config.h
 
 

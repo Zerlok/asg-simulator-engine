@@ -156,7 +156,7 @@ void NodeSimulator::_print_player_units(const Player& player) const
 {
 	for (AbstractUnit* unit : player.units)
 		std::cout << "Unit: "
-				  << unit->get_armor() << " hp at "
+				  << unit->get_health() << " hp at "
 				  << unit->get_position()
 				  << std::endl;
 }

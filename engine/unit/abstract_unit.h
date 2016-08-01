@@ -2,15 +2,28 @@
 #define __ABSTRACT_UNIT_H__
 
 
+#include <set>
+
 #include "common/point.h"
 #include "common/range.h"
 
+#include "unit/unit_stats.h"
+
+enum Action
+{
+	Attacking = 0,
+	Moving,
+	Holding
+};
 
 class AbstractUnit
 {
 	public:
+		// Types.
+		using Status = std::set<Action>;
+
 		// Constructors / Destructor.
-		AbstractUnit(const Point& pos, const Range<size_t>& damage_range, const int armor);
+		AbstractUnit(const Point& pos, const UnitStats& class_stats);
 		AbstractUnit(const AbstractUnit& unit);
 		AbstractUnit(AbstractUnit&& unit);
 		virtual ~AbstractUnit();
@@ -23,15 +36,25 @@ class AbstractUnit
 
 		// Getters.
 		bool is_alive() const;
+
 		const Range<size_t>& get_damage_range() const;
-		int get_armor() const;
+		int get_health() const;
 		const Point& get_position() const;
 
-	protected:
-		Point _pos;
+		// Stats calculators (stats depend on Status).
+		int calculate_shield_regen() const;
+		int calculate_damage() const;
+		int calculate_velocity() const;
+		int calculate_accuracy() const;
+		int calculate_dodge() const;
 
-		Range<size_t> _damage_range;
-		int _armor;
+	protected:
+		const UnitStats _class_stats;
+
+		Point _pos;
+		int _health;
+		int _shield;
+		Status _status = {Holding};
 };
 
 

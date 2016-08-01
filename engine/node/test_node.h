@@ -6,6 +6,9 @@
 #include "abstract_node.h"
 
 
+/*
+ * This class is used in level sort tests (allows to build more complex node networks then default node classes).
+*/
 class TestNode : public AbstractNode
 {
     public:
