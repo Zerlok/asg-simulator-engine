@@ -2,12 +2,12 @@
 
 
 BattleshipUnit::BattleshipUnit(const Point& pos)
-	: AbstractUnit(pos, BattleshipUnitStats)
+	: AbstractUnit(pos, &BattleshipUnitStats)
 {
 }
 
 BattleshipUnit::BattleshipUnit(const Arguments& args)
-	: AbstractUnit(Point::zero, BattleshipUnitStats)
+	: AbstractUnit(Point::zero, &BattleshipUnitStats)
 {
 }
 

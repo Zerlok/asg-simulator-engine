@@ -6,7 +6,7 @@
 #include "core/types.h"
 #include "abstract_unit.h"
 
-const UnitStats TestUnitStats =
+const static UnitStats TestUnitStats =
 {
 	/* max_hp =  */				1000,
 	/* max_shield =  */			1000,
@@ -33,7 +33,6 @@ class TestUnit : public AbstractUnit
 
 		FRIEND_TEST(Unit, AbstractUnit);
 		FRIEND_TEST(Unit, TestUnit);
-
 };
 
 

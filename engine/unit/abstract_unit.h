@@ -9,21 +9,19 @@
 
 #include "unit/unit_stats.h"
 
-enum Action
+enum class Status
 {
-	Attacking = 0,
-	Moving,
-	Holding
+	holding = 0,
+	moving,
+	attacking_on_holding,
+	attacking_on_moving,
 };
 
 class AbstractUnit
 {
 	public:
-		// Types.
-		using Status = std::set<Action>;
-
 		// Constructors / Destructor.
-		AbstractUnit(const Point& pos, const UnitStats& class_stats);
+		AbstractUnit(const Point& pos, const UnitStats* class_stats);
 		AbstractUnit(const AbstractUnit& unit);
 		AbstractUnit(AbstractUnit&& unit);
 		virtual ~AbstractUnit();
@@ -49,12 +47,12 @@ class AbstractUnit
 		int calculate_dodge() const;
 
 	protected:
-		const UnitStats _class_stats;
+		const UnitStats* _class_stats = nullptr;
 
 		Point _pos;
 		int _health;
 		int _shield;
-		Status _status = {Holding};
+		Status _status = Status::holding;
 };
 
 

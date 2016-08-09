@@ -3,13 +3,13 @@
 
 
 NormalUnit::NormalUnit(const Point& pos)
-	: AbstractUnit(pos, NormalUnitStats)
+	: AbstractUnit(pos, &NormalUnitStats)
 {
 }
 
 
 NormalUnit::NormalUnit(const Arguments& args)
-	: AbstractUnit(Point::zero, NormalUnitStats)
+	: AbstractUnit(Point::zero, &NormalUnitStats)
 {
 	std::stringstream ss(args[0]);
 	ss >> _pos;

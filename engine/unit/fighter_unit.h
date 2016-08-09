@@ -6,7 +6,7 @@
 #include "abstract_unit.h"
 
 
-const UnitStats FighterUnitStats =
+const static UnitStats FighterUnitStats =
 {
 	/* max_hp =  */				800,
 	/* max_shield =  */			500,

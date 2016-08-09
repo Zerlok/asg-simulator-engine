@@ -2,12 +2,12 @@
 
 
 FighterUnit::FighterUnit(const Point& pos)
-	: AbstractUnit(pos, FighterUnitStats)
+	: AbstractUnit(pos, &FighterUnitStats)
 {
 }
 
 FighterUnit::FighterUnit(const Arguments& args)
-	: AbstractUnit(Point::zero, FighterUnitStats)
+	: AbstractUnit(Point::zero, &FighterUnitStats)
 {
 }
 

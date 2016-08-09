@@ -15,9 +15,9 @@ struct UnitStats
 	Range<size_t> acc;
 	Range<size_t> dodge;
 	// Status' affects.
-	int attacking_coeff; // for velocity, %
-	int moving_coeff; // for accuracy and dodge, %
-	int holding_coeff; // for set shield regen on, %
+	int attacking_ratio; // for velocity, %
+	int moving_ratio; // for accuracy and dodge, %
+	int holding_ratio; // for set shield regen on, %
 };
 
 bool operator==(const UnitStats& first, const UnitStats& second);

@@ -259,8 +259,6 @@ TEST(Unit, AbstractUnit)
 
 	// Calculating methods.
 
-	/* How should i test this shit?.. */
-
 	unit = new TestUnit;
 	delete unit;
 
@@ -271,17 +269,19 @@ TEST(Unit, AbstractUnit)
 	*/
 
 	unit = new TestUnit;
-	EXPECT_TRUE(unit->_status == std::set<Action>({Holding}));
+	EXPECT_TRUE(unit->_status == Status::holding);
 	unit->fire();
-	EXPECT_TRUE(unit->_status == std::set<Action>({Holding}));
+	EXPECT_TRUE(unit->_status == Status::attacking_on_holding) << int(unit->_status);
 	unit->fire();
-	EXPECT_TRUE(unit->_status == std::set<Action>({Holding}));
+	EXPECT_TRUE(unit->_status == Status::attacking_on_holding);
+	unit->move_to(Point(10, 10, 10));
+	EXPECT_TRUE(unit->_status == Status::attacking_on_moving);
 	unit->hold();
-	EXPECT_TRUE(unit->_status == std::set<Action>({Holding}));
+	EXPECT_TRUE(unit->_status == Status::holding);
 	unit->hold();
-	EXPECT_TRUE(unit->_status == std::set<Action>({Holding}));
-	unit->move_to(zero);
-	EXPECT_TRUE(unit->_status == std::set<Action>({Holding}));
+	EXPECT_TRUE(unit->_status == Status::holding);
+	unit->move_to(Point(0, 0, 0));
+	EXPECT_TRUE(unit->_status == Status::moving);
 	delete unit;
 
 	// Battle methods.
@@ -321,8 +321,8 @@ TEST(Unit, TestUnit)
 	delete unit;
 
 	unit = new TestUnit;
-	EXPECT_TRUE(unit->_class_stats == TestUnitStats);
-	EXPECT_TRUE(unit->_status == std::set<Action>({Holding}));
+	EXPECT_TRUE(*unit->_class_stats == TestUnitStats);
+	EXPECT_TRUE(unit->_status == Status::holding);
 	delete unit;
 }
 

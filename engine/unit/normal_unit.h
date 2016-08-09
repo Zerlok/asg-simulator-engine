@@ -5,7 +5,7 @@
 #include "core/types.h"
 #include "abstract_unit.h"
 
-const UnitStats NormalUnitStats =
+const static UnitStats NormalUnitStats =
 {
 	/* max_hp =  */				1000,
 	/* max_shield =  */			1000,
@@ -16,9 +16,9 @@ const UnitStats NormalUnitStats =
 	/* acc = */					Range<size_t>(80, 95),
 	/* dodge = */				Range<size_t>(1, 10),
 
-	/* attacking_coeff =  */	50,
-	/* moving_coeff =  */		50,
-	/* holding_coeff =  */		150
+	/* attacking_ratio =  */	50,
+	/* moving_ratio =  */		50,
+	/* holding_ratio =  */		150
 };
 
 class NormalUnit : public AbstractUnit

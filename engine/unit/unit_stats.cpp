@@ -15,7 +15,7 @@ bool operator==(const UnitStats& first, const UnitStats& second)
 		first.acc.get_min_value() == second.acc.get_min_value() &&
 		first.dodge.get_max_value() == second.dodge.get_max_value() &&
 		first.dodge.get_min_value() == second.dodge.get_min_value() &&
-		first.attacking_coeff == second.attacking_coeff &&
-		first.moving_coeff == second.moving_coeff &&
-		first.holding_coeff == second.holding_coeff;
+		first.attacking_ratio == second.attacking_ratio &&
+		first.moving_ratio == second.moving_ratio &&
+		first.holding_ratio == second.holding_ratio;
 }

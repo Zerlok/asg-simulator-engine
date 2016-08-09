@@ -3,13 +3,13 @@
 
 
 TestUnit::TestUnit(const Point& pos)
-	: AbstractUnit(pos, TestUnitStats)
+	: AbstractUnit(pos, &TestUnitStats)
 {
 }
 
 
 TestUnit::TestUnit(const Arguments& args)
-	: AbstractUnit(Point::zero, TestUnitStats)
+	: AbstractUnit(Point::zero, &TestUnitStats)
 {
 	std::stringstream ss(args[0]);
 	ss >> _pos;
