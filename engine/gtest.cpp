@@ -18,7 +18,8 @@
 #include "node/units_select_node.h"
 #include "node/root_node.h"
 
-#include "output/json_tools.hpp"
+#include "io/json_writer.hpp"
+#include "io/json_reader.hpp"
 
 TEST(Common, Point)
 {
@@ -220,42 +221,6 @@ TEST(Unit, UnitReader)
 }
 */
 
-struct ComplexTestObject
-{
-	int a = 23;
-	float b = 7.2;
-	char c = 'n';
-	bool d = true;
-	std::string name = "object";
-	std::vector <ComplexTestObject> vec;
-};
-
-template<>
-struct JsonWriter::ObjectPrinter <ComplexTestObject>
-{
-	// A flag to detect the extension
-	static constexpr bool is_printable = true;
-
-	/*
-	 * Generates printing instructions: an array of print_X_to_string
-	 * results (TODO: only X = pair?).
-	 * `multiline` properties intended to be set to true *must* be set to
-	 * `multiline` to enable single-line printing. Otherwise, single-line
-	 * output will be JSON-correct, but not visually structured (and not
-	 * single-line).
-	*/
-	static std::vector <std::string> generate_object_inners (const ComplexTestObject &what, bool multiline)
-	{
-		return {
-			print_pair_to_string ("a", what.a, false),
-			print_pair_to_string ("b", what.b, false),
-			print_pair_to_string ("c", what.c, false),
-			print_pair_to_string ("d", what.d, false),
-			print_pair_to_string ("name", what.name, false),
-			print_pair_to_string ("vec", what.vec, multiline, multiline)
-		};
-	}
-};
 
 struct SimpleTestObject
 {
@@ -266,9 +231,8 @@ struct SimpleTestObject
 template<>
 struct JsonWriter::ObjectPrinter <SimpleTestObject>
 {
-	static constexpr bool is_printable = true;
 	static std::vector <std::string> generate_object_inners
-			(const SimpleTestObject &what, bool multiline)
+			(const SimpleTestObject &what, bool)
 	{
 		return {
 			print_pair_to_string ("a", what.a, false),
@@ -290,7 +254,14 @@ struct RegularTestObject
 template<>
 struct JsonWriter::ObjectPrinter <RegularTestObject>
 {
-	static constexpr bool is_printable = true;
+	/*
+	 * Generates printing instructions: an array of print_X_to_string
+	 * results (TODO: only X = pair?).
+	 * `multiline` properties intended to be set to true *must* be set to
+	 * `multiline` to enable single-line printing. Otherwise, single-line
+	 * output will be JSON-correct, but not visually structured (and not
+	 * single-line).
+	*/
 	static std::vector <std::string> generate_object_inners
 			(const RegularTestObject &what, bool multiline)
 	{
@@ -306,58 +277,85 @@ struct JsonWriter::ObjectPrinter <RegularTestObject>
 	}
 };
 
-TEST(Output, JsonWriter)
+struct BadTestObject
 {
+	std::map<int, std::vector<std::vector<int>>> nested {
+		{0, {{1, 2, 3}}},
+		{1, {{4, 5}, {6}}},
+		{2, {{7, 8}, {9, 0}}}
+	};
+};
+
+template<>
+struct JsonWriter::ObjectPrinter <BadTestObject>
+{
+	static std::vector <std::string> generate_object_inners
+			(const BadTestObject &what, bool multiline)
+	{
+		return {
+			print_pair_to_string ("nested", what.nested, multiline, false)
+		};
+	}
+};
+
+class JsonWriterTester
+{
+public:
+	JsonWriterTester () : oss(), writer (oss) {}
+
+	template <typename T>
+	void check (const T &to_print, const std::string &expected) {
+		writer.print_object (to_print, false);
+		ASSERT_EQ (expected, oss.str());
+		oss.str ("");
+	}
+
+	template <typename T>
+	void check (const T &to_print, const std::vector<std::string> &expected) {
+		writer.print_object (to_print, true);
+		std::istringstream iss (oss.str());
+		for (const std::string &str : expected) {
+			std::string line;
+			std::getline (iss, line);
+			ASSERT_EQ (str, line);
+		}
+		oss.str ("");
+	}
+
+private:
 	std::ostringstream oss;
-	JsonWriter writer (oss);
+	JsonWriter writer;
+};
 
-	writer.print_object (234);
-	ASSERT_EQ ("234", oss.str());
-	oss.str ("");
+TEST(Json, JsonWriter)
+{
+	JsonWriterTester tester;
 
-	writer.print_object (3.4);
-	ASSERT_EQ ("3.4", oss.str());
-	oss.str ("");
+	tester.check (234, "234");
 
-	/* Fun fact: scientific notation is implementation-defined
+	tester.check (3.4, "3.4");
+
+	/*
+	 * Fun fact: scientific notation is implementation-defined
 	 * TODO: regex-check it
 	 * Regex to do it: ([\+\-]?([0-9])*\.?([0-9])+|[\+\-]?([0-9])+\.?([0-9])*)[eE][\+\-]?([0-9])+
-	writer.print (3e27);
-	ASSERT_TRUE ("3e27" == oss.str() || "3E27" == oss.str());
-	oss.str ("");
 	*/
 
-	writer.print_object ('c');
-	ASSERT_EQ ("\"c\"", oss.str());
-	oss.str ("");
+	tester.check ('c', "\"c\"");
 
-	writer.print_object (true);
-	ASSERT_EQ ("true", oss.str());
-	oss.str ("");
+	tester.check (true, "true");
 
-	writer.print_object (false);
-	ASSERT_EQ ("false", oss.str());
-	oss.str ("");
+	tester.check (false, "false");
 
-	// Note: this is not a std::string test, but a const char[] one
-	writer.print_object ("STRing! \t \\ \" / \b \f \n \r");
-	ASSERT_EQ ("\"STRing! \\t \\\\ \\\" \\/ \\b \\f \\n \\r\"", oss.str());
-	oss.str ("");
+	// Note: this is not an std::string test, but a const char[] one
+	tester.check ("STRing! \t \\ \" / \b \f \n \r",
+				  "\"STRing! \\t \\\\ \\\" \\/ \\b \\f \\n \\r\"");
 
 	std::string str {"STRing! \t \\ \" / \b \f \n \r"};
-	writer.print_object (str);
-	ASSERT_EQ ("\"STRing! \\t \\\\ \\\" \\/ \\b \\f \\n \\r\"", oss.str());
-	oss.str ("");
-
-	std::pair <std::string, float> pair = {"label", 42.2};
-	writer.print_pair (pair);
-	ASSERT_EQ ("\"label\" : 42.2", oss.str());
-	oss.str ("");
+	tester.check (str, "\"STRing! \\t \\\\ \\\" \\/ \\b \\f \\n \\r\"");
 
 	SimpleTestObject simple {35, 46};
-	writer.print_object (simple, false);
-	ASSERT_EQ ("{\"a\" : 35, \"b\" : 46}", oss.str());
-	oss.str ("");
+	tester.check (simple, "{\"a\" : 35, \"b\" : 46}");
 
 	std::vector <std::string> simple_lines {
 		"{",
@@ -366,14 +364,7 @@ TEST(Output, JsonWriter)
 		"}"
 	};
 
-	writer.print_object (simple, true);
-	std::istringstream iss (oss.str());
-	for (std::string &str : simple_lines) {
-		std::string line;
-		std::getline (iss, line);
-		ASSERT_EQ (str, line);
-	}
-	oss.str ("");
+	tester.check (simple, simple_lines);
 
 	std::vector <std::string> regular_lines {
 		"{",
@@ -398,94 +389,125 @@ TEST(Output, JsonWriter)
 		"}"
 	};
 
-	writer.print_object (RegularTestObject());
-	iss.str( oss.str() );
-	iss.clear(); // Clear EOF flag
-	for (std::string &str : regular_lines) {
-		std::string line;
-		std::getline (iss, line);
-		ASSERT_EQ (str, line);
+	tester.check (RegularTestObject(), regular_lines);
+}
+
+#define _JRExtType SimpleTestObject
+JsonReaderExtension
+	JRExtFields
+		JRExtDefineField (a)
+		JRExtDefineField (b)
+JRExtEnd
+#undef _JRExtType
+
+#define _JRExtType RegularTestObject
+JsonReaderExtension
+	JRExtFields
+		JRExtDefineField (num)
+		JRExtDefineField (single_line)
+		JRExtDefineField (multiline)
+		JRExtDefineField (single_complex)
+		JRExtDefineField (multi_single)
+		JRExtDefineField (multi_complex)
+JRExtEnd
+#undef _JRExtType
+
+#define _JRExtType BadTestObject
+JsonReaderExtension
+	JRExtFields
+		JRExtDefineField (nested)
+JRExtEnd
+#undef _JRExtType
+
+struct NoDefaultCtor
+{
+	NoDefaultCtor () = delete;
+	NoDefaultCtor (int a) : a (a) {}
+
+	const int a;
+	int b;
+};
+
+#define _JRExtType NoDefaultCtor
+JsonReaderExtension
+	JRExtInitObject
+		JRExtGetFieldToVar (int, a)
+		JRExtFinishInit (a)
+	JRExtFields
+		JRExtDefineField (b)
+JRExtEnd
+#undef _JRExtType
+
+template<>
+struct JsonWriter::ObjectPrinter <NoDefaultCtor>
+{
+	static std::vector <std::string> generate_object_inners
+			(const NoDefaultCtor &what, bool)
+	{
+		return {
+			print_pair_to_string ("a", what.a, false),
+			print_pair_to_string ("b", what.b, false),
+		};
 	}
-	oss.str ("");
+};
 
-	std::vector <std::string> complex_lines {
-		"{",
-		"    \"a\" : 23,",
-		"    \"b\" : 7.2,",
-		"    \"c\" : \"n\",",
-		"    \"d\" : true,",
-		"    \"name\" : \"object\",",
-		"    \"vec\" : [",
-		"        {",
-		"            \"a\" : 23,",
-		"            \"b\" : 7.2,",
-		"            \"c\" : \"n\",",
-		"            \"d\" : true,",
-		"            \"name\" : \"inner1\",",
-		"            \"vec\" : [",
-		"                {",
-		"                    \"a\" : 23,",
-		"                    \"b\" : 7.2,",
-		"                    \"c\" : \"n\",",
-		"                    \"d\" : true,",
-		"                    \"name\" : \"inner1_inner\",",
-		"                    \"vec\" : []",
-		"                }",
-		"            ]",
-		"        },",
-		"        {",
-		"            \"a\" : 23,",
-		"            \"b\" : 7.2,",
-		"            \"c\" : \"n\",",
-		"            \"d\" : true,",
-		"            \"name\" : \"inner2\",",
-		"            \"vec\" : []",
-		"        }",
-		"    ]",
-		"}"
-	};
+class JsonReaderTester
+{
+public:
+	JsonReaderTester () : writer (oss) {}
 
-	ComplexTestObject complex;
-	complex.vec.push_back(ComplexTestObject());
-	complex.vec[0].name = "inner1";
-	complex.vec.push_back(ComplexTestObject());
-	complex.vec[1].name = "inner2";
-	complex.vec[0].vec.push_back(ComplexTestObject());
-	complex.vec[0].vec[0].name = "inner1_inner";
-	writer.print_object (complex, true);
-
-	iss.str( oss.str() );
-	iss.clear(); // Clear EOF flag
-	for (std::string &str : complex_lines) {
-		std::string line;
-		std::getline (iss, line);
-		ASSERT_EQ (str, line);
+	template <typename T>
+	T translate_object (const T &original)
+	{
+		writer.print_object (original);
+		std::istringstream iss ( oss.str() );
+		oss.str ("");
+		reader.get_object_string (iss);
+		return reader.extract_object <T> ();
 	}
-	oss.str ("");
 
-	std::string complex_single_line
-		= std::string("{")
-			+ "\"a\" : 23, " + "\"b\" : 7.2, " + "\"c\" : \"n\", " + "\"d\" : true, " +
-			"\"name\" : \"object\", " +
-			"\"vec\" : [" +
-				"{" + "\"a\" : 23, " + "\"b\" : 7.2, " + "\"c\" : \"n\", " + "\"d\" : true, " +
-				"\"name\" : \"inner1\", " +
-				"\"vec\" : [" +
-					"{" + "\"a\" : 23, " + "\"b\" : 7.2, " + "\"c\" : \"n\", " + "\"d\" : true, " +
-					"\"name\" : \"inner1_inner\", " +
-					"\"vec\" : []" +
-					"}" + "]" +
-				"}, " +
-				"{" + "\"a\" : 23, " + "\"b\" : 7.2, " + "\"c\" : \"n\", " + "\"d\" : true, " +
-					"\"name\" : \"inner2\", " +
-					"\"vec\" : []" +
-				"}" +
-			"]" +
-		"}";
+private:
+	std::ostringstream oss;
+	JsonWriter writer;
+	JsonReader reader;
+};
 
-	writer.print_object (complex, false);
-	ASSERT_EQ (complex_single_line, oss.str());
-	oss.str ("");
+bool operator== (const SimpleTestObject &lh, const SimpleTestObject &rh)
+{
+	return (lh.a == rh.a) && (lh.b == rh.b);
+}
+
+TEST(Json, JsonReader)
+{
+	JsonReaderTester tester;
+
+	SimpleTestObject simple_reference {9, 6};
+	SimpleTestObject simple_translated = tester.translate_object (simple_reference);
+
+	ASSERT_TRUE (simple_reference.a == simple_translated.a);
+	ASSERT_TRUE (simple_reference.b == simple_translated.b);
+
+	RegularTestObject regular_reference;
+	RegularTestObject regular_translated = tester.translate_object (regular_reference);
+
+	ASSERT_TRUE (regular_reference.num == regular_translated.num);
+	ASSERT_TRUE (regular_reference.single_line == regular_translated.single_line);
+	ASSERT_TRUE (regular_reference.multiline == regular_translated.multiline);
+	ASSERT_TRUE (regular_reference.single_complex == regular_translated.single_complex);
+	ASSERT_TRUE (regular_reference.multi_single == regular_translated.multi_single);
+	ASSERT_TRUE (regular_reference.multi_complex == regular_translated.multi_complex);
+
+	BadTestObject bad_reference;
+	BadTestObject bad_translated = tester.translate_object (bad_reference);
+
+	ASSERT_TRUE (bad_reference.nested == bad_translated.nested);
+
+	NoDefaultCtor nodef_reference (45);
+	nodef_reference.b = 98;
+	NoDefaultCtor nodef_translated = tester.translate_object (nodef_reference);
+
+	ASSERT_TRUE (nodef_reference.a == nodef_translated.a);
+	ASSERT_TRUE (nodef_reference.b == nodef_translated.b);
 }
 
 int main(int argc, char *argv[])

@@ -26,7 +26,6 @@ SOURCES += \
 	editor/node_reader_writer.cpp \
 	validator/node_validator.cpp \
 	node/node_expression.cpp \
-	output/logger.cpp \
 	main.cpp \
 	gtest.cpp
 #    core/config.cpp
@@ -55,8 +54,9 @@ HEADERS += \
     editor/node_editor.h \
 	validator/node_validator.h \
 	node/node_expression.h \
-	output/logger.h \
-    output/json_tools.hpp
+	io/json_writer.hpp \
+    io/json_reader.hpp \
+    io/json_io_traits.hpp
 #    core/config.h
 
 

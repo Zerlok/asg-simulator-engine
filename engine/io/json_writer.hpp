@@ -1,11 +1,17 @@
 #ifndef JSON_TOOLS
 #define JSON_TOOLS
 
+#include <forward_list>
 #include <functional>
 #include <type_traits>
+#include <list>
+#include <map>
 #include <ostream>
+#include <unordered_map>
 #include <utility>
 #include <vector>
+
+#include "json_io_traits.hpp"
 
 /*
  * TODO: decide if it should be a class or a namespace
@@ -19,29 +25,17 @@ public:
 	JsonWriter (std::ostream &dest) : dest (dest) {}
 
 	template <typename T>
-	void print_pair (const std::string &key, const T &value, bool multiline = false)
-	{
-		dest << print_pair_to_string (key, value, multiline);
-	}
-
-	template <typename T>
-	void print_pair (const std::pair<std::string, T> &pair, bool multiline = false)
-	{
-		print_pair<T> (pair.first, pair.second, multiline);
-	}
-
-	template <template<class...> class Container, class Content>
-	void print_pair (const std::string &key, const Container <Content> &value,
-					 bool multiline = true, bool content_multiline = true)
+	void print_pair (const std::string &key, const T &value,
+					 bool multiline = false, bool content_multiline = true)
 	{
 		dest << print_pair_to_string (key, value, multiline, content_multiline);
 	}
 
-	template <template<class...> class Container, class Content>
-	void print_pair (const std::pair<std::string, Container <Content>> &pair,
-					 bool multiline = true, bool content_multiline = true)
+	template <typename T>
+	void print_pair (const std::pair<std::string, T> &pair,
+					 bool multiline = false, bool content_multiline = true)
 	{
-		print_pair<Container<Content>> (pair.first, pair.second, multiline, content_multiline);
+		print_pair (pair.first, pair.second, multiline, content_multiline);
 	}
 
 	template <template<class...> class Container, class Content>
@@ -67,11 +61,17 @@ public:
 	}
 
 private:
+/*
+ *  Writer properties
+*/
 	static constexpr size_t INDENT = 4;
 	std::ostream &dest;
 
-	size_t indent_level = 0;
+//	size_t indent_level = 0;
 
+/*
+ * Helper functions
+*/
 	static void inc_indent (size_t &indent_level) { indent_level++; }
 	static void dec_indent (size_t &indent_level) { if (indent_level > 0) indent_level--; }
 
@@ -81,41 +81,33 @@ private:
 		dest << std::endl << spacer;
 	}
 
+/*
+ * "Struct partial specialization" helpers
+*/
 	template <typename T>
-	static std::string print_value_to_string (const T &what, bool multiline)
+	static std::string print_value_to_string (const T &what,
+											  bool multiline, bool content_multiline = true)
 	{
-		return ValuePrinter<T>::print_to_string (what, multiline);
+		return ValuePrinter<T>::print_to_string (what, multiline, content_multiline);
 	}
 
 	template <typename T>
-	static std::string print_pair_to_string (const std::string &key, const T &value, bool multiline)
+	static std::string print_pair_to_string (const std::string &key, const T &value,
+											 bool multiline, bool content_multiline = true)
 	{
 		return print_value_to_string (key, false) + " : "
-				+ print_value_to_string (value, multiline);
+				+ print_value_to_string (value, multiline, content_multiline);
 	}
 
-	template <template<class...> class Container, class Content>
-	static std::string print_pair_to_string (const std::string &key, const Container <Content> &value,
-											 bool multiline, bool content_multiline)
-	{
-		return print_value_to_string(key, false) + " : "
-				+ print_array_to_string (value, multiline, content_multiline);
-	}
-
-	template <typename T>
-	struct is_char_type {
-		static constexpr bool value = std::is_same<T, char>::value
-									  || std::is_same <T, signed char>::value
-									  || std::is_same <T, unsigned char>::value;
-	};
-
-	template <typename T, typename Dummy = T>
+/*
+ * "Struct partial function specializations"
+*/
+	template <typename T, typename = T>
 	struct ValuePrinter
 	{
-		static std::string print_to_string (const T &, bool)
+		static std::string print_to_string (const T &what, bool multiline, bool)
 		{
-			static_assert (sizeof(T) < 0,
-						   "JsonWriter: unsupported object, define a specialization");
+			return print_object_to_string (ObjectPrinter<T>::generate_object_inners(what, multiline), multiline);
 		}
 	};
 
@@ -123,24 +115,18 @@ private:
 	struct ValuePrinter
 	<
 		T,
-		typename std::enable_if <std::is_arithmetic <T>::value
-								 && !is_char_type <T>::value
-								 && !std::is_same <T, bool>::value, T>::type
+		typename std::enable_if <JsonTraits::is_numeric_type<T>::value, T>::type
 	>
 	{
-		static std::string print_to_string (const T &what, bool) {
+		static std::string print_to_string (const T &what, bool, bool) {
 			std::ostringstream oss;
 			oss << what;
 			return oss.str();
 		}
 	};
 
-	template <typename T>
-	static std::string print_char (const T what)
+	static std::string print_char (char what)
 	{
-		static_assert (is_char_type <T>::value,
-					   "Incorrect use of JsonWriter::print_char()");
-
 		switch (what) {
 		case '\t':
 			return "\\t";
@@ -167,10 +153,10 @@ private:
 	struct ValuePrinter
 	<
 		T,
-		typename std::enable_if <is_char_type<T>::value, T>::type
+		typename std::enable_if <JsonTraits::is_char_type<T>::value, T>::type
 	>
 	{
-		static std::string print_to_string (const T &what, bool) {
+		static std::string print_to_string (const T &what, bool, bool) {
 			return "\"" + print_char (what) + "\"";
 		}
 	};
@@ -182,7 +168,7 @@ private:
 		typename std::enable_if <std::is_same <T, std::string>::value, T>::type
 	>
 	{
-		static std::string print_to_string (const std::string &what, bool)
+		static std::string print_to_string (const std::string &what, bool, bool)
 		{
 			std::string result;
 
@@ -198,9 +184,9 @@ private:
 	template <size_t N>
 	struct ValuePrinter <char[N]>
 	{
-		static std::string print_to_string (const char what[N], bool)
+		static std::string print_to_string (const char what[N], bool, bool)
 		{
-			return ValuePrinter<std::string>::print_to_string(std::string (what, N-1), bool());
+			return ValuePrinter<std::string>::print_to_string(std::string (what, N-1), bool(), bool());
 		}
 	};
 
@@ -211,12 +197,26 @@ private:
 		typename std::enable_if <std::is_same <T, bool>::value, T>::type
 	>
 	{
-		static std::string print_to_string (const bool what, bool)
+		static std::string print_to_string (const bool what, bool, bool)
 		{
 			if (what)
 				return "true";
 			else
 				return "false";
+		}
+	};
+
+	template <class T>
+	struct ValuePrinter
+	<
+		T,
+		typename std::enable_if <JsonTraits::is_supported_container<T>::value, T>::type
+	>
+	{
+		static std::string print_to_string (const T &what,
+											bool multiline, bool content_multiline)
+		{
+			return print_array_to_string (what, multiline, content_multiline);
 		}
 	};
 
@@ -227,12 +227,6 @@ private:
 	template <typename T>
 	struct ObjectPrinter
 	{
-		/*
-		 * A flag for template deduction
-		 * Extensions must have it set to true
-		*/
-		static constexpr bool is_printable = false;
-
 		/*
 		 * Generates printing instructions: an array of print_X_to_string()
 		 * results.
@@ -251,24 +245,28 @@ private:
 		{
 			static_assert (sizeof(T) < 0,
 						   "JsonWriter: unsupported object, define a specialization");
+			return {}; // A statement to avoid a warning
 		}
 	};
 
-	template <typename T>
-	struct ValuePrinter
-	<
-		T,
-		typename std::enable_if <ObjectPrinter<T>::is_printable, T>::type
-	>
+	template <typename T1, typename T2>
+	struct ObjectPrinter < std::pair <T1, T2> >
 	{
-		static std::string print_to_string (const T &what, bool multiline)
+		static std::vector <std::string> generate_object_inners
+				(const std::pair <T1, T2> &what, bool multiline)
 		{
-			return print_object_to_string (ObjectPrinter<T>::generate_object_inners(what, multiline), multiline);
+			return {
+				print_pair_to_string ("first", what.first, multiline, multiline),
+				print_pair_to_string ("second", what.second, multiline, multiline)
+			};
 		}
 	};
 
-	template <template<class...> class Container, class Content>
-	static std::string print_array_to_string (const Container<Content> &container,
+	/*
+	 * Complex printers
+	*/
+	template <class Container>
+	static std::string print_array_to_string (const Container &container,
 											  bool multiline, bool content_multiline,
 											  size_t indent_level = 0)
 	{
@@ -284,7 +282,17 @@ private:
 			}
 
 			for (auto it = container.begin(); it != container.end();) {
-				std::istringstream iss ( print_value_to_string (*it, multiline && content_multiline) );
+				std::istringstream iss;
+
+				if (JsonTraits::is_supported_container <typename Container::value_type>::value)
+					iss.str( print_value_to_string (*it,
+													multiline,
+													content_multiline) );
+				else
+					iss.str( print_value_to_string (*it,
+													multiline && content_multiline,
+													multiline && content_multiline) );
+
 				std::string line;
 				std::getline (iss, line);
 				oss << line;
@@ -318,42 +326,10 @@ private:
 											  bool multiline, bool content_multiline,
 											  size_t indent_level = 0)
 	{
-		std::ostringstream oss;
-
-		oss << '[';
-
-		if (multiline) {
-			inc_indent (indent_level);
-			new_line (indent_level, oss);
-		}
-
-		for (int i = 0; i < N;) {
-			std::istringstream iss ( print_value_to_string (container[i], multiline && content_multiline) );
-			std::string line;
-			std::getline (iss, line);
-			oss << line;
-			while ( std::getline (iss, line) ) {
-				new_line (indent_level, oss);
-				oss << line;
-			}
-
-			if (++i < N) {
-				oss << ',';
-				if (multiline)
-					new_line (indent_level, oss);
-				else
-					oss << ' ';
-			}
-		}
-
-		if (multiline) {
-			dec_indent (indent_level);
-			new_line (indent_level, oss);
-		}
-
-		oss << ']';
-
-		return oss.str();
+		std::vector <Content> vec (N);
+		for (int i = 0; i < N; i++)
+			vec[i] = container[i];
+		return print_array_to_string (vec, multiline, content_multiline, indent_level);
 	}
 
 	static std::string print_object_to_string (const std::vector <std::string> &content,
