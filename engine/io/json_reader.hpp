@@ -118,9 +118,10 @@ public:
 	{
 		object_str.clear ();
 
-		src.ignore (std::numeric_limits<std::streamsize>::max(), '{');
+		src.ignore (std::numeric_limits<std::streamsize>::max(), JsonSymbols::fig_bracket_left);
 
-		if (!src) throw std::logic_error (except_msg_read_failure);
+		if (!src)
+			throw std::logic_error (except_msg_read_failure);
 
 		std::vector<bool> nesting;
 		const bool NEST_ARRAY = false;
@@ -131,7 +132,8 @@ public:
 
 		while (nesting.size() > 0)
 		{
-			if (!src) throw std::logic_error (except_msg_read_failure);
+			if (!src)
+				throw std::logic_error (except_msg_read_failure);
 
 			char c = src.get();
 
@@ -141,21 +143,21 @@ public:
 
 			switch (c)
 			{
-			case '\"':
+			case JsonSymbols::quote:
 				read_json_string (src, object_str);
 				break;
-			case '[':
+			case JsonSymbols::sq_bracket_left:
 				nesting.push_back (NEST_ARRAY);
 				break;
-			case ']':
+			case JsonSymbols::sq_bracket_right:
 				if (nesting [nesting.size() - 1] != NEST_ARRAY)
 					throw std::logic_error (except_msg_parce_failure);
 				nesting.pop_back();
 				break;
-			case '{':
+			case JsonSymbols::fig_bracket_left:
 				nesting.push_back (NEST_OBJECT);
 				break;
-			case '}':
+			case JsonSymbols::fig_bracket_right:
 				if (nesting [nesting.size() - 1] != NEST_OBJECT)
 					throw std::logic_error (except_msg_parce_failure);
 				nesting.pop_back();
@@ -185,16 +187,18 @@ private:
 
 	static constexpr const char* except_msg_read_failure = "JsonReader : failed to read an object";
 	static constexpr const char* except_msg_parce_failure = "JsonReader : failed to parce an object";
+	static constexpr const char* except_msg_field_not_found = "JsonReader : failed to find field ";
 
 	static void read_json_string (std::istream &src, std::string &dest)
 	{
 		while (src)
-		{
-			if (src.peek() == '\\') {
+		{			
+			if (src.peek() == JsonSymbols::backslash)
+			{
 				dest.push_back( src.get() );
 				dest.push_back( src.get() );
 			}
-			else if (src.peek() == '\"') {
+			else if (src.peek() == JsonSymbols::quote) {
 				dest.push_back( src.get() );
 				return;
 			}
@@ -212,10 +216,10 @@ private:
 		{
 			switch (src[start])
 			{
-			case '\\':
+			case JsonSymbols::backslash:
 				start += 2;
 				break;
-			case '\"':
+			case JsonSymbols::quote:
 				return start + 1;
 			default:
 				++start;
@@ -231,7 +235,7 @@ private:
 		ObjectReaderBase (const std::string &src, size_t start)
 			: src (src), start (start)
 		{
-			if (src.at(start) != '{')
+			if (src.at(start) != JsonSymbols::fig_bracket_left)
 				throw std::logic_error (except_msg_parce_failure);
 
 			std::vector<bool> nesting;
@@ -246,25 +250,25 @@ private:
 				switch ( src.at(start) )
 				{
 				case '\"':
-					if ( nesting.size() == 1 && (src[start - 1] == '{' || src[start - 1] == ',') )
+					if ( nesting.size() == 1 && (src[start - 1] == JsonSymbols::fig_bracket_left || src[start - 1] == JsonSymbols::comma) )
 						labels.push_back (start);
 					start = skip_json_string (src, start);
 					break;
-				case '[':
+				case JsonSymbols::sq_bracket_left:
 					++start;
 					nesting.push_back (NEST_ARRAY);
 					break;
-				case ']':
+				case JsonSymbols::sq_bracket_right:
 					++start;
 					if (nesting [nesting.size() - 1] != NEST_ARRAY)
 						throw std::logic_error (except_msg_parce_failure);
 					nesting.pop_back();
 					break;
-				case '{':
+				case JsonSymbols::fig_bracket_left:
 					++start;
 					nesting.push_back (NEST_OBJECT);
 					break;
-				case '}':
+				case JsonSymbols::fig_bracket_right:
 					++start;
 					if (nesting [nesting.size() - 1] != NEST_OBJECT)
 						throw std::logic_error (except_msg_parce_failure);
@@ -290,7 +294,7 @@ private:
 		{
 			size_t pos = start;
 
-			std::string to_find = "\"" + label + "\"";
+			std::string to_find = JsonSymbols::quote + label + JsonSymbols::quote;
 
 			auto label_it = labels.end ();
 
@@ -303,13 +307,13 @@ private:
 			}
 
 			if ( label_it == labels.end () )
-				throw std::logic_error ( "JsonReader : failed to find field " + to_find
-										 + " in \"" + src.substr (0, 10) + (src.size() > 10 ? "...\"" : "\"") );
+				throw std::logic_error(except_msg_field_not_found + to_find
+									   + " in \"" + src.substr (0, 10) + ((src.size() > 10) ? ("...\"") :("\"")));
 
 			// `src.size ()` is the position after the last character & there must be
 			// at least a ':', some contents and a '}' somewhere in the end of `src`
 			// => at least 3 symbols before the `src` end
-			if (*label_it + to_find.size() > src.size() - 3 || src[*label_it + to_find.size()] != ':')
+			if (*label_it + to_find.size() > src.size() - 3 || src[*label_it + to_find.size()] != JsonSymbols::colon)
 				throw std::logic_error (except_msg_parce_failure);
 
 			pos = *label_it + to_find.size() + 1;
@@ -317,7 +321,7 @@ private:
 			auto result = ValueReader<Field_T>::read_value (src, pos);
 
 			// The architecture guarantees that `pos` is valid
-			if (src[pos] != ',' && src[pos] != '}')
+			if (src[pos] != JsonSymbols::comma && src[pos] != JsonSymbols::fig_bracket_right)
 				throw std::logic_error (except_msg_parce_failure);
 
 			return result;
@@ -353,8 +357,8 @@ private:
 			typedef typename std::remove_cv<K>::type first_t;
 			typedef typename std::remove_cv<V>::type second_t;
 
-			first_t first = this->template read_obj_field<first_t> ("first");
-			second_t second = this->template read_obj_field<second_t> ("second");
+			first_t first = this->template read_obj_field<first_t> (JsonConsts::first);
+			second_t second = this->template read_obj_field<second_t> (JsonConsts::second);
 
 			return {first, second};
 		}
@@ -392,28 +396,28 @@ private:
 
 	static char read_char (const std::string &json, size_t pos = 0)
 	{
-		if (json.at(pos) == '\\')
+		if (json.at(pos) == JsonSymbols::backslash)
 		{
 			switch ( json.at(pos + 1) )
 			{
-			case 't':
-				return '\t';
-			case '\"':
-				return '\"';
-			case '\\':
-				return '\\';
-			case '/':
-				return '/';
-			case 'b':
-				return '\b';
-			case 'f':
-				return '\f';
-			case 'n':
-				return '\n';
-			case 'r':
-				return '\r';
-			default:
-				throw std::logic_error ("JsonReader : unknown escape sequence");
+				case JsonSymbols::e_tab:
+					return JsonSymbols::tab;
+				case JsonSymbols::e_newline:
+					return JsonSymbols::newline;
+				case JsonSymbols::quote:
+					return JsonSymbols::quote;
+				case JsonSymbols::backslash:
+					return JsonSymbols::backslash;
+				case JsonSymbols::slash:
+					return JsonSymbols::slash;
+				case JsonSymbols::e_backspace:
+					return JsonSymbols::backspace;
+				case JsonSymbols::e_pageskip:
+					return JsonSymbols::pageskip;
+				case JsonSymbols::e_trademark:
+					return JsonSymbols::trademark;
+				default:
+					throw std::logic_error ("JsonReader : unknown escape sequence");
 			}
 		}
 		else
@@ -429,23 +433,22 @@ private:
 	{
 		static T read_value (const std::string &src, size_t &pos)
 		{
-			if (src[pos] != '\"')
+			if (src[pos] != JsonSymbols::quote)
 				throw std::logic_error (except_msg_parce_failure);
 
-			pos++;
+			++pos;
 
 			T result = read_char (src, pos);
 
-			if (src[pos] == '\\')
+			if (src[pos] == JsonSymbols::backslash)
 				pos += 2;
 			else
-				pos++;
+				++pos;
 
-			if (src[pos] != '\"')
+			if (src[pos] != JsonSymbols::quote)
 				throw std::logic_error (except_msg_parce_failure);
 
-			pos++;
-
+			++pos;
 			return result;
 		}
 	};
@@ -459,22 +462,23 @@ private:
 	{
 		static std::string read_value (const std::string &src, size_t &pos)
 		{
-			if (src[pos] != '\"')
+			if (src[pos] != JsonSymbols::quote)
 				throw std::logic_error (except_msg_parce_failure);
 
 			std::string result;
 
-			while (pos < src.size() && src[pos] != '\"')
+			while (pos < src.size() && src[pos] != JsonSymbols::quote)
 			{
 				result.push_back( read_char(src, pos) );
-				if (src[pos] == '\\') pos++;
-				pos++;
+				if (src[pos] == JsonSymbols::backslash)
+					++pos;
+				++pos;
 			}
 
-			if (src[pos] != '\"')
+			if (src[pos] != JsonSymbols::quote)
 				throw std::logic_error (except_msg_parce_failure);
 
-			pos++;
+			++pos;
 
 			return result;
 		}
@@ -489,19 +493,19 @@ private:
 	{
 		static bool read_value (const std::string &src, size_t &start)
 		{
-			if (src[start] == '0') {
-				start++;
+			if (src[start] == JsonConsts::zero) {
+				++start;
 				return false;
 			}
-			else if (src[start] == '1') {
-				start++;
+			else if (src[start] == JsonConsts::one) {
+				++start;
 				return true;
 			}
-			else if (src.substr (start, 5) == "false") {
+			else if (src.substr (start, 5) == JsonConsts::str_false) {
 				start += 5;
 				return false;
 			}
-			else if (src.substr (start, 4) == "true") {
+			else if (src.substr (start, 4) == JsonConsts::str_true) {
 				start += 4;
 				return true;
 			}
@@ -523,17 +527,17 @@ private:
 		{
 			T result;
 
-			if ( !(pos < src.size() && src[pos] == '[') )
+			if ( !(pos < src.size() && src[pos] == JsonSymbols::sq_bracket_left) )
 				throw std::logic_error (except_msg_parce_failure);
 
-			pos++;
+			++pos;
 
-			while (pos < src.size() && src[pos - 1] != ']')
+			while (pos < src.size() && src[pos - 1] != JsonSymbols::sq_bracket_right)
 			{
 				auto tmp = ValueReader<typename T::value_type>::read_value (src, pos);
 
-				if ( pos < src.size() && (src[pos] == ',' || src[pos] == ']') )
-					pos++;
+				if ( pos < src.size() && (src[pos] == JsonSymbols::comma || src[pos] == JsonSymbols::sq_bracket_right) )
+					++pos;
 				else
 					throw std::logic_error (except_msg_parce_failure);
 

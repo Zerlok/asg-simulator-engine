@@ -54,7 +54,18 @@ class Factory
 		using CreatorsMap = std::unordered_map<Key, BaseCreator*>;
 		using Keys = std::vector<Key>;
 
-		Factory() {}
+		Factory()
+			: _creators() {}
+
+		Factory(Factory<Key, BaseCls>&& factory)
+			: _creators()
+		{
+			for (const typename CreatorsMap::value_type& pair : factory._creators)
+				_creators.insert(pair);
+
+			factory._creators.clear();
+		}
+
 		~Factory()
 		{
 			for (const typename CreatorsMap::value_type& pair : _creators)

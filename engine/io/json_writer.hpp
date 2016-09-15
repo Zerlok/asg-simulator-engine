@@ -72,12 +72,12 @@ private:
 /*
  * Helper functions
 */
-	static void inc_indent (size_t &indent_level) { indent_level++; }
-	static void dec_indent (size_t &indent_level) { if (indent_level > 0) indent_level--; }
+	static void inc_indent (size_t &indent_level) { ++indent_level; }
+	static void dec_indent (size_t &indent_level) { if (indent_level > 0) --indent_level; }
 
 	static void new_line (size_t indent_level, std::ostream &dest)
 	{
-		std::string spacer (INDENT * indent_level, ' ');
+		std::string spacer (INDENT * indent_level, JsonSymbols::space);
 		dest << std::endl << spacer;
 	}
 
@@ -95,7 +95,7 @@ private:
 	static std::string print_pair_to_string (const std::string &key, const T &value,
 											 bool multiline, bool content_multiline = true)
 	{
-		return print_value_to_string (key, false) + " : "
+		return print_value_to_string (key, false) + JsonConsts::kv_sep
 				+ print_value_to_string (value, multiline, content_multiline);
 	}
 
@@ -128,22 +128,22 @@ private:
 	static std::string print_char (char what)
 	{
 		switch (what) {
-		case '\t':
-			return "\\t";
-		case '\"':
-			return "\\\"";
-		case '\\':
-			return "\\\\";
-		case '/':
-			return "\\/";
-		case '\b':
-			return "\\b";
-		case '\f':
-			return "\\f";
-		case '\n':
-			return "\\n";
-		case '\r':
-			return "\\r";
+		case JsonSymbols::quote:
+			return JsonSymbols::s_quote;
+		case JsonSymbols::slash:
+			return JsonSymbols::s_slash;
+		case JsonSymbols::backslash:
+			return JsonSymbols::s_backslash;
+		case JsonSymbols::newline:
+			return JsonSymbols::s_newline;
+		case JsonSymbols::tab:
+			return JsonSymbols::s_tab;
+		case JsonSymbols::backspace:
+			return JsonSymbols::s_backspace;
+		case JsonSymbols::pageskip:
+			return JsonSymbols::s_pageskip;
+		case JsonSymbols::trademark:
+			return JsonSymbols::s_trademark;
 		default:
 			return std::string(1, what);
 		}
@@ -157,7 +157,7 @@ private:
 	>
 	{
 		static std::string print_to_string (const T &what, bool, bool) {
-			return "\"" + print_char (what) + "\"";
+			return JsonSymbols::quote + print_char (what) + JsonSymbols::quote;
 		}
 	};
 
@@ -172,10 +172,10 @@ private:
 		{
 			std::string result;
 
-			result += "\"";
+			result += JsonSymbols::quote;
 			for (char c : what)
 				result += print_char (c);
-			result += "\"";
+			result += JsonSymbols::quote;
 
 			return result;
 		}
@@ -199,10 +199,7 @@ private:
 	{
 		static std::string print_to_string (const bool what, bool, bool)
 		{
-			if (what)
-				return "true";
-			else
-				return "false";
+			return ((what) ? (JsonConsts::str_true) : (JsonConsts::str_false));
 		}
 	};
 
@@ -256,8 +253,8 @@ private:
 				(const std::pair <T1, T2> &what, bool multiline)
 		{
 			return {
-				print_pair_to_string ("first", what.first, multiline, multiline),
-				print_pair_to_string ("second", what.second, multiline, multiline)
+				print_pair_to_string (JsonConsts::first, what.first, multiline, multiline),
+				print_pair_to_string (JsonConsts::second, what.second, multiline, multiline)
 			};
 		}
 	};
@@ -272,7 +269,7 @@ private:
 	{
 		std::ostringstream oss;
 
-		oss << '[';
+		oss << JsonSymbols::sq_bracket_left;
 
 		if (container.size() > 0)
 		{
@@ -302,11 +299,11 @@ private:
 				}
 
 				if ( ++it != container.end() ) {
-					oss << ',';
+					oss << JsonSymbols::comma;
 					if (multiline)
 						new_line (indent_level, oss);
 					else
-						oss << ' ';
+						oss << JsonSymbols::space;
 				}
 			}
 
@@ -316,7 +313,7 @@ private:
 			}
 		}
 
-		oss << ']';
+		oss << JsonSymbols::sq_bracket_right;
 
 		return oss.str();
 	}
@@ -337,7 +334,7 @@ private:
 	{
 		std::ostringstream oss;
 
-		oss << '{';
+		oss << JsonSymbols::fig_bracket_left;
 
 		if (multiline) {
 			inc_indent (indent_level);
@@ -355,11 +352,11 @@ private:
 			}
 
 			if ( ++it != content.end() ) {
-				oss << ',';
+				oss << JsonSymbols::comma;
 				if (multiline)
 					new_line (indent_level, oss);
 				else
-					oss << ' ';
+					oss << JsonSymbols::space;
 			}
 		}
 
@@ -368,7 +365,7 @@ private:
 			new_line (indent_level, oss);
 		}
 
-		oss << '}';
+		oss << JsonSymbols::fig_bracket_right;
 
 		return oss.str();
 	}

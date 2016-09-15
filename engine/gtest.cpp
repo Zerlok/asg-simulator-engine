@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <simulator/node_simulator.h>
 
 #include "common/point.h"
 #include "common/range.h"
@@ -20,6 +21,10 @@
 
 #include "io/json_writer.hpp"
 #include "io/json_reader.hpp"
+
+
+const NodeFactory global_node_factory = NodeSimulator::initialize_node_factory();
+
 
 TEST(Common, Point)
 {
@@ -60,8 +65,8 @@ TEST(Common, Range)
     for (size_t i = 0; i < sq_len; ++i)
     {
         const int r = rng.get_value();
-        ASSERT_LE(left, r);
-        ASSERT_GT(right, r);
+		EXPECT_LE(left, r);
+		EXPECT_GT(right, r);
     }
 
     EXPECT_EQ(left, rng.get_min_value());
@@ -118,29 +123,11 @@ TEST(Common, StringUtilsJoin)
     EXPECT_EQ("", result);
 }
 
-template <typename NodeType>
-void reg_type (AbstractNode::Type type, NodeFactory &factory)
+
+TEST(Node, SortByLevels)
 {
-	std::ostringstream oss;
-	oss << type;
-	factory.registerate<NodeType>( oss.str() );
-}
-
-TEST(Node, SortByLevels) {
-    NodeFactory factory;
-    NodeReader reader(factory);
-
-	reg_type<RootNode> (AbstractNode::Type::root, factory);
-	reg_type<CmdFireNode> (AbstractNode::Type::cmd_fire, factory);
-	reg_type<CmdHoldNode> (AbstractNode::Type::cmd_hold, factory);
-	reg_type<CmdMoveNode> (AbstractNode::Type::cmd_move, factory);
-	reg_type<UnitsSelectNode> (AbstractNode::Type::units_select, factory);
-
-	std::ostringstream oss;
-	oss << AbstractNode::Type::root;
-	factory.registerate<RootNode>( oss.str() );
-
-	Nodes initial_nodes = reader.read("strategies/defence_strategy.txt");
+	NodeReader reader(global_node_factory);
+	Nodes initial_nodes = reader.read("defence_strategy.txt");
     Nodes sorted_nodes = nodeutils::sort_by_levels(initial_nodes);
     std::vector<size_t> sorted_order;
     for(size_t i = 0; i < initial_nodes.size(); ++i)
@@ -226,6 +213,12 @@ struct SimpleTestObject
 {
 	int a;
 	int b;
+
+	bool operator==(const SimpleTestObject& other) const
+	{
+		return (a == other.a)
+				&& (b == other.b);
+	}
 };
 
 template<>
@@ -252,7 +245,7 @@ struct RegularTestObject
 };
 
 template<>
-struct JsonWriter::ObjectPrinter <RegularTestObject>
+struct JsonWriter::ObjectPrinter<RegularTestObject>
 {
 	/*
 	 * Generates printing instructions: an array of print_X_to_string
@@ -277,63 +270,47 @@ struct JsonWriter::ObjectPrinter <RegularTestObject>
 	}
 };
 
-struct BadTestObject
-{
-	std::map<int, std::vector<std::vector<int>>> nested {
-		{0, {{1, 2, 3}}},
-		{1, {{4, 5}, {6}}},
-		{2, {{7, 8}, {9, 0}}}
-	};
-};
-
-template<>
-struct JsonWriter::ObjectPrinter <BadTestObject>
-{
-	static std::vector <std::string> generate_object_inners
-			(const BadTestObject &what, bool multiline)
-	{
-		return {
-			print_pair_to_string ("nested", what.nested, multiline, false)
-		};
-	}
-};
 
 class JsonWriterTester
 {
-public:
-	JsonWriterTester () : oss(), writer (oss) {}
+	public:
+		JsonWriterTester()
+			: oss(),
+			  writer (oss) {}
 
-	template <typename T>
-	void check (const T &to_print, const std::string &expected) {
-		writer.print_object (to_print, false);
-		ASSERT_EQ (expected, oss.str());
-		oss.str ("");
-	}
-
-	template <typename T>
-	void check (const T &to_print, const std::vector<std::string> &expected) {
-		writer.print_object (to_print, true);
-		std::istringstream iss (oss.str());
-		for (const std::string &str : expected) {
-			std::string line;
-			std::getline (iss, line);
-			ASSERT_EQ (str, line);
+		template <typename T>
+		void check(const T &to_print, const std::string &expected)
+		{
+			writer.print_object (to_print, false);
+			EXPECT_EQ(expected, oss.str());
+			oss.str ("");
 		}
-		oss.str ("");
-	}
 
-private:
-	std::ostringstream oss;
-	JsonWriter writer;
+		template <typename T>
+		void check(const T &to_print, const std::vector<std::string> &expected)
+		{
+			writer.print_object (to_print, true);
+			std::istringstream iss (oss.str());
+			for (const std::string &str : expected) {
+				std::string line;
+				std::getline (iss, line);
+				EXPECT_EQ(str, line);
+			}
+			oss.str ("");
+		}
+
+	private:
+		std::ostringstream oss;
+		JsonWriter writer;
 };
+
 
 TEST(Json, JsonWriter)
 {
 	JsonWriterTester tester;
 
-	tester.check (234, "234");
-
-	tester.check (3.4, "3.4");
+	tester.check(234, "234");
+	tester.check(3.4, "3.4");
 
 	/*
 	 * Fun fact: scientific notation is implementation-defined
@@ -341,11 +318,9 @@ TEST(Json, JsonWriter)
 	 * Regex to do it: ([\+\-]?([0-9])*\.?([0-9])+|[\+\-]?([0-9])+\.?([0-9])*)[eE][\+\-]?([0-9])+
 	*/
 
-	tester.check ('c', "\"c\"");
-
-	tester.check (true, "true");
-
-	tester.check (false, "false");
+	tester.check('c', "\"c\"");
+	tester.check(true, JsonConsts::str_true);
+	tester.check(false, JsonConsts::str_false);
 
 	// Note: this is not an std::string test, but a const char[] one
 	tester.check ("STRing! \t \\ \" / \b \f \n \r",
@@ -412,13 +387,6 @@ JsonReaderExtension
 JRExtEnd
 #undef _JRExtType
 
-#define _JRExtType BadTestObject
-JsonReaderExtension
-	JRExtFields
-		JRExtDefineField (nested)
-JRExtEnd
-#undef _JRExtType
-
 struct NoDefaultCtor
 {
 	NoDefaultCtor () = delete;
@@ -453,29 +421,25 @@ struct JsonWriter::ObjectPrinter <NoDefaultCtor>
 
 class JsonReaderTester
 {
-public:
-	JsonReaderTester () : writer (oss) {}
+	public:
+		JsonReaderTester () : writer (oss) {}
 
-	template <typename T>
-	T translate_object (const T &original)
-	{
-		writer.print_object (original);
-		std::istringstream iss ( oss.str() );
-		oss.str ("");
-		reader.get_object_string (iss);
-		return reader.extract_object <T> ();
-	}
+		template <typename T>
+		T translate_object (const T &original)
+		{
+			writer.print_object (original);
+			std::istringstream iss ( oss.str() );
+			oss.str ("");
+			reader.get_object_string (iss);
+			return reader.extract_object <T> ();
+		}
 
-private:
-	std::ostringstream oss;
-	JsonWriter writer;
-	JsonReader reader;
+	private:
+		std::ostringstream oss;
+		JsonWriter writer;
+		JsonReader reader;
 };
 
-bool operator== (const SimpleTestObject &lh, const SimpleTestObject &rh)
-{
-	return (lh.a == rh.a) && (lh.b == rh.b);
-}
 
 TEST(Json, JsonReader)
 {
@@ -484,31 +448,27 @@ TEST(Json, JsonReader)
 	SimpleTestObject simple_reference {9, 6};
 	SimpleTestObject simple_translated = tester.translate_object (simple_reference);
 
-	ASSERT_TRUE (simple_reference.a == simple_translated.a);
-	ASSERT_TRUE (simple_reference.b == simple_translated.b);
+	EXPECT_EQ(simple_reference.a, simple_translated.a);
+	EXPECT_EQ(simple_reference.b, simple_translated.b);
 
 	RegularTestObject regular_reference;
 	RegularTestObject regular_translated = tester.translate_object (regular_reference);
 
-	ASSERT_TRUE (regular_reference.num == regular_translated.num);
-	ASSERT_TRUE (regular_reference.single_line == regular_translated.single_line);
-	ASSERT_TRUE (regular_reference.multiline == regular_translated.multiline);
-	ASSERT_TRUE (regular_reference.single_complex == regular_translated.single_complex);
-	ASSERT_TRUE (regular_reference.multi_single == regular_translated.multi_single);
-	ASSERT_TRUE (regular_reference.multi_complex == regular_translated.multi_complex);
-
-	BadTestObject bad_reference;
-	BadTestObject bad_translated = tester.translate_object (bad_reference);
-
-	ASSERT_TRUE (bad_reference.nested == bad_translated.nested);
+	EXPECT_EQ(regular_reference.num, regular_translated.num);
+	EXPECT_EQ(regular_reference.single_line, regular_translated.single_line);
+	EXPECT_EQ(regular_reference.multiline, regular_translated.multiline);
+	EXPECT_EQ(regular_reference.single_complex, regular_translated.single_complex);
+	EXPECT_EQ(regular_reference.multi_single, regular_translated.multi_single);
+	EXPECT_EQ(regular_reference.multi_complex, regular_translated.multi_complex);
 
 	NoDefaultCtor nodef_reference (45);
 	nodef_reference.b = 98;
 	NoDefaultCtor nodef_translated = tester.translate_object (nodef_reference);
 
-	ASSERT_TRUE (nodef_reference.a == nodef_translated.a);
-	ASSERT_TRUE (nodef_reference.b == nodef_translated.b);
+	EXPECT_EQ(nodef_reference.a, nodef_translated.a);
+	EXPECT_EQ(nodef_reference.b, nodef_translated.b);
 }
+
 
 int main(int argc, char *argv[])
 {

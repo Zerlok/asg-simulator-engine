@@ -13,37 +13,55 @@
 #include "node_simulator.h"
 
 
-NodeSimulator::NodeSimulator()
+NodeFactory NodeSimulator::initialize_node_factory()
 {
-	// Init unit factory.
-	_unit_factory.registerate<NormalUnit>("normal");
+	NodeFactory node_factory;
+	NodeSimulator::initialize_node_factory(node_factory);
+	return std::move(node_factory);
+}
 
-	// Init node factory.
+
+void NodeSimulator::initialize_node_factory(NodeFactory& node_factory)
+{
+	std::string empty("");
 	std::stringstream ss;
 
 	// Basic nodes.
 	ss << AbstractNode::Type::root;
-	_node_factory.registerate<RootNode>(ss.str());
-	ss.str("");
+	node_factory.registerate<RootNode>(ss.str());
+	ss.str(empty);
 	ss << AbstractNode::Type::end;
-	_node_factory.registerate<EndNode>(ss.str());
-	ss.str("");
+	node_factory.registerate<EndNode>(ss.str());
+	ss.str(empty);
 
 	// Command nodes.
 	ss << AbstractNode::Type::cmd_fire;
-	_node_factory.registerate<CmdFireNode>(ss.str());
-	ss.str("");
+	node_factory.registerate<CmdFireNode>(ss.str());
+	ss.str(empty);
 	ss << AbstractNode::Type::cmd_hold;
-	_node_factory.registerate<CmdHoldNode>(ss.str());
-	ss.str("");
+	node_factory.registerate<CmdHoldNode>(ss.str());
+	ss.str(empty);
 	ss << AbstractNode::Type::cmd_move;
-	_node_factory.registerate<CmdMoveNode>(ss.str());
-	ss.str("");
+	node_factory.registerate<CmdMoveNode>(ss.str());
+	ss.str(empty);
 
 	// Unit nodes.
 	ss << AbstractNode::Type::units_select;
-	_node_factory.registerate<UnitsSelectNode>(ss.str());
-	ss.str("");
+	node_factory.registerate<UnitsSelectNode>(ss.str());
+	ss.str(empty);
+}
+
+
+void NodeSimulator::initialize_unit_factory(UnitFactory& unit_factory)
+{
+	unit_factory.registerate<NormalUnit>("normal");
+}
+
+
+NodeSimulator::NodeSimulator()
+{
+	initialize_unit_factory(_unit_factory);
+	initialize_node_factory(_node_factory);
 }
 
 

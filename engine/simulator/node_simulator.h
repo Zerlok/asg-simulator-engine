@@ -9,6 +9,11 @@
 class NodeSimulator
 {
 	public:
+		// Static.
+		static NodeFactory initialize_node_factory();
+		static void initialize_node_factory(NodeFactory& node_factory);
+		static void initialize_unit_factory(UnitFactory& unit_factory);
+
 		// Constructor / Destructor.
 		NodeSimulator();
 		~NodeSimulator();
