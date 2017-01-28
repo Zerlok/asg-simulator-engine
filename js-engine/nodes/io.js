@@ -1,6 +1,6 @@
 "use strict"
 
-var Nodes = require('./specials');
+var nodeFactory = require('./specials').factory;
 
 function fromJson(text) {
 	var lst = [];
@@ -11,15 +11,11 @@ function fromJson(text) {
 
 	for (var i in data.nodes) {
 		var row = data.nodes[i];
-		// row.args.splice(0, 0, row.name);
-		// row.args.splice(0, 0, i);
-		// var node = Nodes.factory.createArgs(row.name, args);
-		var node = Nodes.factory.create(row.name, i, row.name);
+		var node = nodeFactory.create(row.name, i, row.name);
 		for (var f in row.ins) {
 			var field = row.ins[f];
 			node.inputs[field.name].data = field.data;
 		}
-
 		lst.push(node);
 	}
 
@@ -42,14 +38,12 @@ function fromJson(text) {
 	return lst;
 }
 
+
 function toJson(nodeList) {
 	var data = {'nodes': [], 'links': []};
 	for (var i in nodeList) {
 		var node = nodeList[i];
 		var row = {'id': i, 'name': node.name};
-		// var args = node.getArgs();
-		// if (args != null)
-			// row.args = args;
 		var ins = [];
 		for (var field in node.inputs) {
 			var portData = node.inputs[field].data;
@@ -57,10 +51,8 @@ function toJson(nodeList) {
 				ins.push({'name': field, 'data': portData});
 			}
 		}
-
 		if (ins.length > 0)
 			row.ins = ins;
-
 		data.nodes.push(row);
 	}
 
@@ -75,11 +67,9 @@ function toJson(nodeList) {
 				var child = outPort.children[c];
 				pair.children.push({'port': child.name, 'num': nodeList.indexOf(child.holder)})
 			}
-
 			if (pair.children.length > 0)
 				row.pairs.push(pair);
 		}
-
 		if (row.pairs.length > 0)
 			data.links.push(row);
 	}

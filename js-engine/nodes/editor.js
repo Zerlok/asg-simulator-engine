@@ -57,6 +57,9 @@ class NodeEditor {
 	}
 
 	getNode(idx) {
+		if (idx < 0)
+			idx = this.nodes.length + idx;
+
 		return this.nodes[idx];
 	}
 
@@ -101,6 +104,33 @@ class NodeEditor {
 
 		if (outNode.unlink(outPortNum, inPortNum, inNode))
 			console.log(`${outNode.name}.${outPortNum} output port deattached from ${inNode.name}.${inPortNum} input port.`);
+	}
+
+	showNode(idx) {
+		var node = this.getNode(idx);
+		if (node == null)
+			return console.error(`Can't show ${idx} node!`);
+
+		var ins = Object.keys(node.inputs);
+		var outs = Object.keys(node.outputs);
+		var children = node.getChildren().map(function(child){ return child.name + '-' + child.id; });
+		var parents = node.getParents().map(function(parent){ return parent.name + '-' + parent.id });
+
+		console.log('------------------------ EDITOR OUTPUT ------------------------');
+		console.log(`Node(${node.name}-${node.id}), ins(${ins.length}): [${ins}], outs(${outs.length}): [${outs}]`);
+		console.log(`Receives inputs from [${parents}]`);
+		console.log(`Pushes outputs to [${children}]`);
+	}
+
+	showNodes() {
+		console.log('------------------------ EDITOR OUTPUT ------------------------');
+		console.log(`Total ${this.nodes.length} nodes:`);
+		for (var i in this.nodes) {
+			var node = this.nodes[i];
+			var ins = Object.keys(node.inputs);
+			var outs = Object.keys(node.outputs);
+			console.log(`Node(${node.name}-${node.id}), ins(${ins.length}): [${ins}], outs(${outs.length}): [${outs}]`);
+		}
 	}
 }
 

@@ -1,14 +1,14 @@
 "use strict"
 
 var Node = require('./node');
-var cfg = require('./config');
+var nodesCfg = require('../core/config').engine.nodes;
 
 
 // --------------------------- Logical Nodes --------------------------- //
 
 class RootNode extends Node.BaseNode {
 	constructor(id, name) {
-		super(id, name, cfg.nodes.root.inputs, cfg.nodes.root.outputs);
+		super(id, name, nodesCfg.root.inputs, nodesCfg.root.outputs);
 	}
 
 	get isReady() { return true; }
@@ -29,7 +29,7 @@ class RootNode extends Node.BaseNode {
 
 class FilterNode extends Node.BaseNode {
 	constructor(id, name) {
-		super(id, name, cfg.nodes.filter.inputs, cfg.nodes.filter.outputs);
+		super(id, name, nodesCfg.filter.inputs, nodesCfg.filter.outputs);
 	}
 
 	get isReady() {
@@ -44,8 +44,8 @@ class FilterNode extends Node.BaseNode {
 
 	get criterias() {
 		var lst = [];
-		for (var i in cfg.nodes.filter.criterias) {
-			var name = cfg.nodes.filter.criterias[i];
+		for (var i in nodesCfg.filter.criterias) {
+			var name = nodesCfg.filter.criterias[i];
 			var data = this.inputs[name].data;
 			if (data != null) {
 				if (cfg.operators.hasOwnProperty(data.op)) {
@@ -71,11 +71,12 @@ class FilterNode extends Node.BaseNode {
 		this.outputs.units = [];
 		var criterias = this.criterias();
 
+		var valid;
 		for (var i in this.inputs.units) {
 			var unit = this.inputs.units[i];
 
 			// TODO: Use map instead.
-			var valid = true;
+			valid = true;
 			for (var i in criterias) {
 				var criteria = criterias[i];
 				valid = valid && criteria(unit);
@@ -89,10 +90,11 @@ class FilterNode extends Node.BaseNode {
 
 class ManipulatorNode extends Node.BaseNode {
 	constructor(id, name) {
-		super(id, name, cfg.nodes.manipulator.inputs, cfg.nodes.manipulator.outputs);
+		super(id, name, nodesCfg.manipulator.inputs, nodesCfg.manipulator.outputs);
 	}
 
 	_executeSpecial() {
+		// TODO: Check if can gain an access to private fields/methods (_executeSpecial for example).
 		var name = this.inputs.operation.data;
 		var op = this['_'+name];
 		if (op == null)
@@ -141,7 +143,7 @@ class ManipulatorNode extends Node.BaseNode {
 
 class ConditionalNode extends Node.BaseNode {
 	constructor(id, name) {
-		super(id, name, cfg.nodes.conditional.inputs, cfg.nodes.conditional.outputs);
+		super(id, name, nodesCfg.conditional.inputs, nodesCfg.conditional.outputs);
 	}
 
 	_executeSpecial() {
@@ -160,7 +162,7 @@ class ConditionalNode extends Node.BaseNode {
 
 class ForkNode extends Node.BaseNode {
 	constructor(id, name) {
-		super(id, name, cfg.nodes.fork.inputs, cfg.nodes.fork.outputs);
+		super(id, name, nodesCfg.fork.inputs, nodesCfg.fork.outputs);
 	}
 
 	_executeSpecial() {
@@ -171,8 +173,8 @@ class ForkNode extends Node.BaseNode {
 			str = 'onFalse_';
 		}
 
-		for (var i in cfg.nodes.fork.passing) {
-			var name = cfg.nodes.fork.passing[i];
+		for (var i in nodesCfg.fork.passing) {
+			var name = nodesCfg.fork.passing[i];
 			this.inputs[name].data = this.outputs[str+name];
 		}
 	}
@@ -183,7 +185,7 @@ class ForkNode extends Node.BaseNode {
 
 class FireCmdNode extends Node.BaseNode {
 	constructor(id, name) {
-		super(id, name, cfg.nodes.cmdFire.inputs, cfg.nodes.cmdFire.outputs);
+		super(id, name, nodesCfg.cmdFire.inputs, nodesCfg.cmdFire.outputs);
 	}
 
 	_executeSpecial() {
@@ -199,7 +201,7 @@ class FireCmdNode extends Node.BaseNode {
 
 class HoldCmdNode extends Node.BaseNode {
 	constructor(id, name) {
-		super(id, name, cfg.nodes.cmdHold.inputs, cfg.nodes.cmdHold.outputs);
+		super(id, name, nodesCfg.cmdHold.inputs, nodesCfg.cmdHold.outputs);
 	}
 
 	_executeSpecial() {
@@ -211,7 +213,7 @@ class HoldCmdNode extends Node.BaseNode {
 
 class MoveCmdNode extends Node.BaseNode {
 	constructor(id, name) {
-		super(id, name, cfg.nodes.cmdMove.inputs, cfg.nodes.cmdMove.outputs);
+		super(id, name, nodesCfg.cmdMove.inputs, nodesCfg.cmdMove.outputs);
 	}
 
 	_executeSpecial() {
@@ -231,9 +233,9 @@ nodeFactory.registrate('filter', FilterNode);
 nodeFactory.registrate('manipulator', ManipulatorNode);
 nodeFactory.registrate('condition', ConditionalNode);
 nodeFactory.registrate('fork', ForkNode);
-nodeFactory.registrate('cmd-fire', FireCmdNode);
-nodeFactory.registrate('cmd-hold', HoldCmdNode);
-nodeFactory.registrate('cmd-move', MoveCmdNode);
+nodeFactory.registrate('cmdFire', FireCmdNode);
+nodeFactory.registrate('cmdHold', HoldCmdNode);
+nodeFactory.registrate('cmdMove', MoveCmdNode);
 
 
 module.exports = {
@@ -247,5 +249,5 @@ module.exports = {
 	CmdHold: HoldCmdNode,
 	CmdMove: MoveCmdNode,
 	factory: nodeFactory,
-	config: cfg
+	config: nodesCfg,
 };

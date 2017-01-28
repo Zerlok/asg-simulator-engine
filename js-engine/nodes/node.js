@@ -70,36 +70,44 @@ class Node {
 			this.outputs[field] = new Port(i, field, this);
 		}
 
-		console.log(`<Node:${id}:${name} (ins: [${inFields}], outs: [${outFields}])> created.`);
+		// console.log(`<Node:${id}:${name} (ins: [${inFields}], outs: [${outFields}])> created.`);
 	}
 
-	get isReady() {
+	isReady() {
 		for (var name in this.inputs) {
 			var inPort = this.inputs[name];
 			if (inPort.isEmpty())
 				return false;
 		}
-
 		return true;
 	}
 
-	get children() {
+	getChildren() {
 		var lst = [];
-		for (var outPort in this.outputs)
-			for (var inPort in outPort.children)
-				if (lst.indexOf(inPort.holder) != -1)
+		for (var name in this.outputs) {
+			var outPort = this.outputs[name];
+			for (var i in outPort.children) {
+				var inPort = outPort.children[i];
+				// console.log(inPort);
+				if (lst.indexOf(inPort.holder) == -1) {
 					lst.push(inPort.holder);
-
+				}
+			}
+		}
 		return lst;
 	}
 
-	get parents() {
+	getParents() {
 		var lst = [];
-		for (var inPort in this.inputs)
-			for (var outPort in inPort.parents)
-				if (lst.indexOf(outPort.holder) != -1)
-					lst.push(inPort.holder);
-
+		for (var name in this.inputs) {
+			var inPort = this.inputs[name];
+			for (var i in inPort.parents) {
+				var outPort = inPort.parents[i];
+				if (lst.indexOf(outPort.holder) == -1) {
+					lst.push(outPort.holder);
+				}
+			}
+		}
 		return lst;
 	}
 
@@ -207,9 +215,9 @@ class Node {
 		if (!this.isReady())
 			return console.error(`Node ${this.name} is not ready for executeion!`);
 
-		this.refreshOutputs();
+		// this.refreshOutputs();
 		this._executeSpecial();
-		this.refreshInputs();
+		// this.refreshInputs();
 		for (var name in this.outputs) {
 			var outPort = this.outputs[name];
 			outPort.pushData();

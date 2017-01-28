@@ -8,18 +8,35 @@ Nodes.Editor = require('./nodes/editor').Editor;
 var filename = "./strategy.txt";
 var neditor = new Nodes.Editor();
 
-// neditor.createNode('filter', ['byHealth', 'byShields', 'byPosition']);
-// neditor.createNode('cmd-fire');
-// neditor.link(0, 0, 1, 0);
-// neditor.save(filename);
 
+function createStrategy(filename) {
+	neditor.createNode('filter');
+	neditor.createNode('filter');
+	neditor.createNode('cmdFire');
+	neditor.link(0, 0, 1, 0);
+	neditor.link(0, 1, 2, 0);
+	neditor.link(1, 0, 3, 0);
+	neditor.link(2, 0, 3, 1);
+
+	neditor.createNode('filter');
+	neditor.createNode('cmdHold');
+	neditor.link(0, 0, 4, 0);
+	neditor.link(4, 0, 5, 0);
+
+	neditor.save(filename);
+}
+
+function checkStrategy() {
+	var nodes = neditor.nodes;
+	// console.log(nodes[0]);
+	console.log(nodes[1]);
+	console.log(nodes[0].isParentOf(nodes[1]));
+	console.log(nodes[4].isChildOf(nodes[0]));
+}
+
+// createStrategy(filename);
 neditor.load(filename);
 
-
-var nodes = neditor.nodes;
-console.log(nodes[0]);
-console.log(nodes[1]);
-console.log(nodes[0].isParentOf(nodes[1]));
-console.log(nodes[0].isChildOf(nodes[1]));
-console.log(nodes[1].id);
-console.log(nodes[1].getOutPort(0).holder.id);
+// checkStrategy();
+neditor.showNodes();
+neditor.showNode(2);
