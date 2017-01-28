@@ -1,7 +1,7 @@
 #ifdef __RELEASE_ASG_ENGINE__
 
 #include <stdexcept>
-#include "common/utils.h"
+#include "common/utils.hpp"
 #include "simulator/node_simulator.h"
 #include "editor/node_editor.h"
 

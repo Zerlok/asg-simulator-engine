@@ -2,8 +2,8 @@
 #define __ROOT_NODE_H__
 
 
-#include "core/types.h"
-#include "abstract_node.h"
+#include "core/types.hpp"
+#include "abstract.hpp"
 
 
 class RootNode : public AbstractNode
@@ -11,16 +11,16 @@ class RootNode : public AbstractNode
 	public:
 		static RootNode* cast(AbstractNode* node);
 
-		RootNode(const NodeData& data = NodeData());
+		RootNode(const DataHolder& data = DataHolder());
 		RootNode(const Arguments& args);
 		RootNode(const RootNode& node);
 		RootNode(RootNode&& node);
 		~RootNode();
 
-		const NodeData& execute() override;
+		const DataHolder& execute() override;
 		Arguments get_arguments() const override;
 
-		void set_data(const NodeData& data);
+		void set_data(const DataHolder& data);
 };
 
 

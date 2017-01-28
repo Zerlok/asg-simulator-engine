@@ -2,8 +2,8 @@
 #define __END_NODE_H__
 
 
-#include "core/types.h"
-#include "abstract_node.h"
+#include "core/types.hpp"
+#include "abstract.hpp"
 
 
 class EndNode : public AbstractNode
@@ -17,11 +17,11 @@ class EndNode : public AbstractNode
 		EndNode(EndNode&& node);
 		~EndNode();
 
-		const NodeData& execute() override;
+		const DataHolder& execute() override;
 		Arguments get_arguments() const override;
 
-		NodeData& get_data();
-		const NodeData& get_data() const;
+		DataHolder& get_data();
+		const DataHolder& get_data() const;
 };
 
 

@@ -2,8 +2,8 @@
 #define __SIMULATOR_H__
 
 
-#include "core/types.h"
-#include "core/factories.h"
+#include "core/types.hpp"
+#include "core/factories.hpp"
 
 
 class NodeSimulator

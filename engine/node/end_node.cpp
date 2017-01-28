@@ -42,7 +42,7 @@ EndNode::~EndNode()
 }
 
 
-const NodeData& EndNode::execute()
+const DataHolder& EndNode::execute()
 {
 //	for (const NodeData& data : _inputs)
 //		_result_data.
@@ -57,13 +57,13 @@ Arguments EndNode::get_arguments() const
 }
 
 
-NodeData& EndNode::get_data()
+DataHolder& EndNode::get_data()
 {
 	return _result_data;
 }
 
 
-const NodeData& EndNode::get_data() const
+const DataHolder& EndNode::get_data() const
 {
 	return _result_data;
 }

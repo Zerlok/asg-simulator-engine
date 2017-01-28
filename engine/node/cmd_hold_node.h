@@ -2,8 +2,8 @@
 #define __CMD_HOLD_NODE_H__
 
 
-#include "core/types.h"
-#include "abstract_node.h"
+#include "core/types.hpp"
+#include "abstract.hpp"
 
 
 class CmdHoldNode : public AbstractNode
@@ -15,7 +15,7 @@ class CmdHoldNode : public AbstractNode
 		CmdHoldNode(CmdHoldNode&& node);
 		~CmdHoldNode();
 
-		const NodeData& execute() override;
+		const DataHolder& execute() override;
 		Arguments get_arguments() const override;
 };
 

@@ -4,9 +4,9 @@
 
 #include <fstream>
 #include <sstream>
-#include "core/types.h"
-#include "core/factories.h"
-#include "node/abstract_node.h"
+#include "core/types.hpp"
+#include "core/factories.hpp"
+#include "node/abstract.hpp"
 
 
 namespace nodeformat

@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <initializer_list>
-#include "core/types.h"
+#include "core/types.hpp"
 
 
 class Point

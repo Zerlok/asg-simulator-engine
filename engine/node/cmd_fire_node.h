@@ -2,8 +2,8 @@
 #define __CMD_FIRE_NODE_H__
 
 
-#include "core/types.h"
-#include "abstract_node.h"
+#include "core/types.hpp"
+#include "abstract.hpp"
 
 
 class CmdFireNode : public AbstractNode
@@ -15,7 +15,7 @@ class CmdFireNode : public AbstractNode
 		CmdFireNode(CmdFireNode&& node);
 		~CmdFireNode();
 
-		const NodeData& execute() override;
+		const DataHolder& execute() override;
 		Arguments get_arguments() const override;
 
 	private:

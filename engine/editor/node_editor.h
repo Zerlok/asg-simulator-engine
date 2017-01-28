@@ -6,7 +6,7 @@
 #include <fstream>
 #include <string>
 
-#include "core/types.h"
+#include "core/types.hpp"
 #include "node_reader_writer.h"
 #include "simulator/node_simulator.h"
 

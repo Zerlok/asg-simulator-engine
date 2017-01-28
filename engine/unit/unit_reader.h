@@ -4,7 +4,7 @@
 
 #include <string>
 #include <fstream>
-#include "core/factories.h"
+#include "core/factories.hpp"
 
 
 namespace unitformat

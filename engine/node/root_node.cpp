@@ -11,7 +11,7 @@ RootNode* RootNode::cast(AbstractNode* node)
 }
 
 
-RootNode::RootNode(const NodeData& data)
+RootNode::RootNode(const DataHolder& data)
 	: AbstractNode(Type::root, 0, 1)
 {
 	_result_data = data;
@@ -41,7 +41,7 @@ RootNode::~RootNode()
 }
 
 
-const NodeData& RootNode::execute()
+const DataHolder& RootNode::execute()
 {
 	_push_result_to_outputs();
 	return _result_data;
@@ -54,7 +54,7 @@ Arguments RootNode::get_arguments() const
 }
 
 
-void RootNode::set_data(const NodeData& data)
+void RootNode::set_data(const DataHolder& data)
 {
 	_result_data = data;
 }

@@ -44,7 +44,7 @@ CmdFireNode::~CmdFireNode()
 }
 
 
-const NodeData& CmdFireNode::execute()
+const DataHolder& CmdFireNode::execute()
 {
 	_result_data = _receive_data_from_input(0);
 

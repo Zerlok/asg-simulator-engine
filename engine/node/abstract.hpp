@@ -3,7 +3,8 @@
 
 
 #include <vector>
-#include "core/types.h"
+#include "core/data.hpp"
+#include "port.h"
 
 
 /*
@@ -34,30 +35,15 @@ class AbstractNode
 {
 	public:
 		// Types.
-		using DataPair = std::pair<bool, NodeData>;			// First: was data set, Second: NodeData itself.
-		using InDatas = std::vector<DataPair>;				// Input data for each input port num.
-		using PortPair = std::pair<AbstractNode*, size_t>;	// First: connected node pointer, Second: input port num.
-		using PortPairs = std::vector<PortPair>;			// All nodes this port is connected to.
-		using OutPorts = std::vector<PortPairs>;			// Connections of each output port num.
-
-		enum class Type
-		{
-			root = 0,
-			cmd_fire,
-			cmd_hold,
-			cmd_move,
-			units_select,
-			condition,
-			end,
-		};
-
-		static Type make_type(const int t);
+		using List = std::list<AbstractNode*>;
 
 		// Constructors / Destructor.
-		AbstractNode(const Type& type, const size_t& in_ports_num, const size_t& out_ports_num);
+		AbstractNode(const std::string& name);
 		AbstractNode(const AbstractNode& node);
 		AbstractNode(AbstractNode&& node);
 		virtual ~AbstractNode();
+
+		const std::string& get_name() const;
 
 		/*
 		 * Answers is current node ready for execution. (Is input data enough).
@@ -69,7 +55,19 @@ class AbstractNode
 		 * Makes transformation with input data and pushes it to next nodes,
 		 * which were connected to output ports.
 		 */
-		virtual const NodeData& execute() = 0;
+		void execute()
+		{
+			if (!is_ready())
+				return;
+
+//			for (AbstractPort* input : _inputs)
+//				input->save_data();
+
+			_custom_execute();
+
+			for (AbstractPort* output : _outputs)
+				output->push();
+		}
 
 		/*
 		 * Returns node's arguments as vector of strings.
@@ -79,40 +77,35 @@ class AbstractNode
 		/*
 		 * Connects output port of this node to input port of given node.
 		 */
-		void link(const size_t& out_port_num, const size_t& in_port_num, AbstractNode& node);
+		void link(const size_t& out, const size_t& in, AbstractNode& node);
 
 		/*
 		 * Removes connection between output port of this node and input port of
 		 * given node.
 		 */
-		void unlink(const size_t& out_port_num, const size_t& in_port_num, AbstractNode& node);
+		void unlink(const size_t& out, const size_t& in, AbstractNode& node);
 
 		/*
 		 * Answers is output port of this node connected to input port of given
 		 * node.
 		 */
-		bool is_linked(const size_t& out_port_num, const size_t& in_port_num, const AbstractNode& node) const;
+		bool is_linked(const size_t& out, const size_t& in, const AbstractNode& node) const;
 
 		/*
-		 * Returns type of this node.
+		 * Returns vector of input ports of this node.
 		 */
-		const Type& get_type() const;
-
-		/*
-		 * Returns vector of input data of this node.
-		 */
-		const InDatas& get_input_data() const;
+		 const Ports& get_input_ports() const;
 
 		/*
 		 * Returns vector of output ports of this node.
 		 */
-		const OutPorts& get_output_ports() const;
+		const Ports& get_output_ports() const;
 
 		/*
 		 * Returns vector of nodes, which were connected with this node.
 		 */
-		Nodes get_connected_outputs();
-		const Nodes get_connected_outputs() const;
+		const List& get_children_nodes() const;
+		const Nodes get_children_nodes() const;
 
 		// Operators.
 		bool operator==(const AbstractNode& node) const;
@@ -121,20 +114,20 @@ class AbstractNode
 
 	protected:
 		// Fileds.
-		const Type _type;
-		InDatas _inputs;
-		OutPorts _outputs;
-		NodeData _result_data;
+		Ports _inputs;
+		Ports _outputs;
+		List _children;
+
 
 		// Methods.
-		void _push_result_to_outputs();
-		void _put_data_to_input(const size_t& in_port_num, const NodeData& data);
-		NodeData _receive_data_from_input(const size_t& in_port_num);
+		virtual void _custom_execute() = 0;
 };
 
 
-std::ostream& operator<<(std::ostream& out, const AbstractNode::Type& type);
-std::istream& operator>>(std::istream& in, AbstractNode::Type& type);
+using Nodes = std::vector<AbstractNode*>;
+
+
+std::ostream& operator<<(std::ostream& out, AbstractNode& node);
 
 
 // __ABSTRACT_NODE_H__

@@ -1,7 +1,7 @@
 #ifndef UNIT_STATS_H
 #define UNIT_STATS_H
 
-#include "common/range.h"
+#include "common/range.hpp"
 
 struct UnitStats
 {

@@ -2,12 +2,11 @@
 #define __ABSTRACT_UNIT_H__
 
 
-#include <set>
-
-#include "common/point.h"
-#include "common/range.h"
-
+#include <vector>
+#include "common/point.hpp"
+#include "common/range.hpp"
 #include "unit/unit_stats.h"
+
 
 enum class Status
 {
@@ -16,6 +15,7 @@ enum class Status
 	attacking_on_holding,
 	attacking_on_moving,
 };
+
 
 class AbstractUnit
 {
@@ -54,6 +54,8 @@ class AbstractUnit
 		int _shield;
 		Status _status = Status::holding;
 };
+
+using Units = std::vector<AbstractUnit*>;
 
 
 // __ABSTRACT_UNIT_H__

@@ -2,8 +2,8 @@
 #define TEST_NODE_H
 
 
-#include "core/types.h"
-#include "abstract_node.h"
+#include "core/types.hpp"
+#include "abstract.hpp"
 
 
 /*
@@ -15,7 +15,7 @@ class TestNode : public AbstractNode
         TestNode(const size_t &in_ports_num = 1, const size_t &out_ports_num = 1);
         ~TestNode();
 
-        const NodeData& execute() override;
+        const DataHolder& execute() override;
         Arguments get_arguments() const override;
 };
 

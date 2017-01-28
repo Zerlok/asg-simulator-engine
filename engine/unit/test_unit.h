@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 
-#include "core/types.h"
+#include "core/types.hpp"
 #include "abstract_unit.h"
 
 const static UnitStats TestUnitStats =

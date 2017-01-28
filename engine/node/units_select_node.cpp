@@ -46,7 +46,7 @@ UnitsSelectNode::~UnitsSelectNode()
 
 
 
-const NodeData& UnitsSelectNode::execute()
+const DataHolder& UnitsSelectNode::execute()
 {
 	_result_data = _receive_data_from_input(0);
 

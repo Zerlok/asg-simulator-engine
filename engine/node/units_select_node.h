@@ -2,8 +2,8 @@
 #define __UNITS_SELECT_NODE_H__
 
 
-#include "core/types.h"
-#include "abstract_node.h"
+#include "core/types.hpp"
+#include "abstract.hpp"
 
 
 class UnitsSelectNode : public AbstractNode
@@ -17,7 +17,7 @@ class UnitsSelectNode : public AbstractNode
 		UnitsSelectNode(UnitsSelectNode&& node);
 		~UnitsSelectNode();
 
-		const NodeData& execute() override;
+		const DataHolder& execute() override;
 		Arguments get_arguments() const override;
 
 		// Getters.

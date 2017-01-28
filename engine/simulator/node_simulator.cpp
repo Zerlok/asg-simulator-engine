@@ -99,7 +99,7 @@ void NodeSimulator::run(Player& attacker, Player& defender)
 
 	// Execute attacker's and defender's schemes continiusly,
 	// until battle result or max iterations num.
-	NodeData battle_data(attacker.units, defender.units);
+	DataHolder battle_data(attacker.units, defender.units);
 
 	nodeutils::sort_by_levels(attacker.strategy);
 	nodeutils::sort_by_levels(defender.strategy);

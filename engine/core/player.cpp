@@ -1,34 +1,40 @@
-#include <sstream>
-#include <fstream>
-#include <stdexcept>
-#include "player.h"
+#include "player.hpp"
 
 
-static const std::string ERR_CANNOT_OPEN_FILE = "Can't open file: ";
+Player::Player(const Units& units,
+			   const Nodes& strategy)
+	: units(units),
+	  strategy(strategy)
+{
+}
 
 
-Player::Player(const Units& data)
-	: _begin(data)
+Player::Player(const Player& player)
+	: units(player.units),
+	  strategy(player.strategy)
+{
+}
+
+
+Player::Player(Player&& player)
+	: units(std::move(player.units)),
+	  strategy(std::move(player.strategy))
 {
 }
 
 
 Player::~Player()
 {
+	for (AbstractUnit* unit : units)
+		delete unit;
+
+	for (AbstractNode* node : strategy)
+		delete node;
 }
 
 
-void Player::read_strategy_from_file(const std::string& filename)
+bool Player::is_valid() const
 {
-	std::ifstream in(filename);
-
-	if (!in.is_open())
-	{
-		std::stringstream ss;
-		ss << ERR_CANNOT_OPEN_FILE << filename;
-		throw std::invalid_argument(ss.str());
-	}
-
-	// TODO: Build node scheme from file.
+	return (!units.empty()
+			&& !strategy.empty());
 }
-

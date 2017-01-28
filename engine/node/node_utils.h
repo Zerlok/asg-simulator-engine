@@ -2,8 +2,8 @@
 #define __NODE_UTILS_H__
 
 
-#include "core/types.h"
-#include "abstract_node.h"
+#include "core/types.hpp"
+#include "abstract.hpp"
 #include "root_node.h"
 
 

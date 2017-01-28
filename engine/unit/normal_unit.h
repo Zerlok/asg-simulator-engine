@@ -2,7 +2,7 @@
 #define __NORMAL_UNIT_H__
 
 
-#include "core/types.h"
+#include "core/types.hpp"
 #include "abstract_unit.h"
 
 const static UnitStats NormalUnitStats =

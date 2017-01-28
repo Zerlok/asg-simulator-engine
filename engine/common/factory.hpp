@@ -5,11 +5,15 @@
 template<class DataKey, class DataCls>
 class Factory;
 
+
+#include <string>
+#include <vector>
 #include <sstream>
 #include <stdexcept>
-#include <vector>
 #include <unordered_map>
-#include "core/types.h"
+
+
+using Arguments = std::vector<std::string>;
 
 
 static const std::string ERR_KEY_NOT_FOUND = "The key is not registered: ";
@@ -82,7 +86,7 @@ class Factory
 				throw std::invalid_argument(ss.str());
 			}
 
-			return ((it->second)->create());
+			return (it->second)->create();
 		}
 
 		BaseCls* create(const Key &key, const Arguments& args) const
@@ -97,10 +101,10 @@ class Factory
 			}
 
 			if (args.empty())
-				return ((it->second)->create());
+				return (it->second)->create();
 
 			else
-				return ((it->second)->create(args));
+				return (it->second)->create(args);
 		}
 
 		Keys get_registered() const

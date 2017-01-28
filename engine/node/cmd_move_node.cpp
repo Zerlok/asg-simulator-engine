@@ -39,7 +39,7 @@ CmdMoveNode::~CmdMoveNode()
 }
 
 
-const NodeData& CmdMoveNode::execute()
+const DataHolder& CmdMoveNode::execute()
 {
 	_result_data = _receive_data_from_input(0);
 

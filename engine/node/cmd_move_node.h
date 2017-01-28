@@ -2,9 +2,9 @@
 #define __CMD_MOVE_NODE_H__
 
 
-#include "common/point.h"
-#include "core/types.h"
-#include "abstract_node.h"
+#include "common/point.hpp"
+#include "core/types.hpp"
+#include "abstract.hpp"
 
 
 class CmdMoveNode : public AbstractNode
@@ -16,7 +16,7 @@ class CmdMoveNode : public AbstractNode
 		CmdMoveNode(CmdMoveNode&& node);
 		~CmdMoveNode();
 
-		const NodeData& execute() override;
+		const DataHolder& execute() override;
 		Arguments get_arguments() const override;
 
 	private:

@@ -2,7 +2,7 @@
 #define FIGHTER_UNIT_H
 
 
-#include "core/types.h"
+#include "core/types.hpp"
 #include "abstract_unit.h"
 
 

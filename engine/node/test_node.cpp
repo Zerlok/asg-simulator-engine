@@ -12,7 +12,7 @@ TestNode::~TestNode()
 }
 
 
-const NodeData& TestNode::execute()
+const DataHolder& TestNode::execute()
 {
     _push_result_to_outputs();
     return _result_data;
