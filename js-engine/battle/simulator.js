@@ -1,7 +1,11 @@
 "use strict"
 
-var cfg = require('./config');
-const maxRounds = Nodes.config.battle.maxRounds;
+const cfg = require('../core/config').engine;
+const maxRounds = cfg.battle.maxRounds;
+
+var UnitsIO = require('../units/io');
+var Nodes = require('../nodes/base');
+Nodes.io = require('../nodes/io');
 
 
 function swap(a, b) {
@@ -14,20 +18,20 @@ function swap(a, b) {
 class Player {
 	constructor(name, units, nodes) {
 		this.name = name;
-		this.units = {initial: units, current: units.slice()};
-		this.strategy = nodes;
-		this.state = Nodes.config.battle.defaultState;
+		this.units = {initial: UnitsIO.fromJson(units), current: []};
+		this.strategy = Nodes.io.fromJson(nodes);
+		// this.state = cfg.battle.defaultState;
 	}
 
-	get isReady() {
-		return (this.state != Nodes.config.battlefield.states[0]);
+	isReady() {
+		return (this.units.current.length > 0);
 	}
 
 	findRoot() {
 		var rootNode = null;
 		for (var i in this.strategy) {
 			var node = this.strategy[i];
-			if (node.name == Nodes.config.nodes.firstNodeName) {
+			if (node.name == cfg.nodes.main) {
 				rootNode = node;
 				break;
 			}
@@ -40,47 +44,20 @@ class Player {
 		return rootNode;
 	}
 
-	sortStrategy() {
+	validate() {
+		if (this.units.length == 0) {
+			console.error(`'${this.name}' player has not any unit!`);
+			return false;
+		}
+
 		var rootNode = this.findRoot();
-		var l = 0;
-		var levels = [[rootNode]];
+		if (rootNode == null) {
+			console.error(`'${this.name}' player strategy doesn't has main node!`);
+			return false;
+		}
 
-		// While have unfinished level (finished level means each node at last level hasn't got children nodes).
-		while (l < levels.length) {
-			// Looking through current level.
-			for (var i in levels[l]) {
-				var level = levels[l];
-				var node = level[i];
-				var children = node.children();
-
-				// If node has children, then current level is not finished (is not last).
-				if (children.length > 0) {
-					if (l+1 == level.length) { // Add next level if required.
-						level.push([]);
-					}
-					var nextLevel = level[l+1];
-
-					// For each child of current node.
-					for (var c in children) {
-						var child = children[c];
-
-						// Check if child is not at next level.
-						if (nextLevel.indexOf(child) == -1) {
-							nextLevel.push(child); // Save child at next level.
-							for (var badL = l; badL >= 0; --badL) { // Check child and remove from earlier levels.
-								var badIdx = levels[badL].indexOf(child);
-								if (badIdx != -1)
-									levels[l].splice(badIdx, 1);
-							}
-
-						} // endif new child node.
-					} // endfor children.
-				} // endif has children.
-			} // endfor node in current level.
-			++l;
-		} // endwhile has unfinished level.
-
-		this.strategy = levels; // TODO: Save nodes as linear array.
+		this.strategy = Nodes.getTHL(rootNode); // TODO: Save nodes as linear array.
+		return true;
 	}
 
 	updateState() {
@@ -100,8 +77,12 @@ class Player {
 
 
 function simulateBattle(attacker, defender) {
-	attacker.sortStrategy();
-	defender.sortStrategy();
+	if (!attacker.validate()) {
+		return console.error(`Attacker '${attacker.name}' is invalid! Exiting battle simulation ...`);
+	} else if (!defender.validate()) {
+		return console.error(`Defender '${defender.name}' is invalid! Exiting battle simulation ...`);
+	}
+
 	var active = attacker;
 	var inactive = defender;
 
@@ -129,7 +110,14 @@ function simulateBattle(attacker, defender) {
 	}
 
 	console.log(`Battle simulation (${attacker.name} vs ${defender.name}) was finished.`);
-	console.log(`Attacker: units(${attacker.units.current.length}), state: ${attacker.state}`);
-	console.log(`Defender: units(${defender.units.current.length}), state: ${defender.state}`);
+	console.log(`Attacker: units(${attacker.units.current.length})`);
+	console.log(`Defender: units(${defender.units.current.length})`);
 	// TODO: Create battle log file and save it.
 }
+
+
+module.exports = {
+	Player: Player,
+	simulateBattle: simulateBattle,
+	config: cfg
+};

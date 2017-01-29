@@ -1,6 +1,6 @@
 "use strict"
 
-var funcs = require('../common/functions');
+const funcs = require('../common/functions');
 
 
 // ------------------------------ TITLES ------------------------------ //
@@ -18,7 +18,8 @@ const titles = {
 
 	battle: {
 		side: {self: "own", enemy: "enemies"},
-		states: ["continues", "won", "loose", "surrender", "draw"]
+		states: ["begins", "continues", "ended"],
+		results: ["won", "lost", "draw"]
 	},
 
 	units: {
@@ -52,9 +53,6 @@ const titles = {
 	}
 };
 
-const hp = 'health';
-const shp = 'shields';
-
 
 // ------------------------------ BATTLE CONFIG ------------------------------ //
 
@@ -64,7 +62,27 @@ const battle = {
 	field: {width: width, height: height},
 	states: {
 		names: titles.battle.states,
-		default: titles.battle.states[0]
+		prepared: titles.battle.states[0],
+		started: titles.battle.states[1],
+		finished: titles.battle.states[2]
+	},
+	results: {
+		names: titles.battle.results,
+		win: {
+			name: titles.battle.results[0],
+			short: "+",
+			message: function(att, def) { return att.name+" won the batlle with "+def.name; }
+		},
+		loose: {
+			names: titles.battle.results[1],
+			short: "-",
+			message: function(att, def) { return att.name+" lost the batlle with "+def.name; }
+		},
+		draw: {
+			names: titles.battle.results[2],
+			short: "*",
+			message: function(att, def) { return "the battle between "+att.name+" and "+def.name+" ended in a draw"; }
+		}
 	},
 	maxRounds: 256
 };
@@ -83,7 +101,7 @@ var units = {
 		'battleship',
 		'demolisher'
 	],
-	types: {}, // Will be filled by appender function (look down).
+	types: {}, // Will be filled below.
 	fields: {
 		names: titles.units.fields,
 
@@ -99,10 +117,12 @@ var units = {
 		fuelWaste: {	minVal: 1,						maxVal: 1 },
 		score: {		minVal: 1000,					maxVal: 10000000 },
 
-		generators: {}
+		generators: {} // Will be filled below.
 	},
 	scoreFields: ['health', 'shields', 'shieldRegen', 'speed', 'fuel'],
 };
+
+// Create generator functions (field value setters by unit type).
 function clampUF(name, value) { return funcs.clamp(units.fields[name].minVal, units.fields[name].maxVal, value); }
 units.fields.generators = {
 	"type": function(n) { return 			units.typesOrder[n];										},
@@ -125,7 +145,7 @@ units.fields.generators['score'] = function(n) {
 	return (cntr * Math.pow(sum, 2/cntr));
 }
 
-// Create unit prototype for every type.
+// Create unit prototype for every type (using generators).
 for (var i in units.typesOrder) {
 	var type = units.typesOrder[i];
 	var obj = {};
@@ -142,45 +162,64 @@ for (var i in units.typesOrder) {
 // ------------------------------ NODES CONFIG ------------------------------ //
 
 var nodes = {
-	root: titles.nodes.types[0],
+	main: titles.nodes.types[0],
 	types: titles.nodes.types,
+	root: {
+		inputs: [units.self, units.enemy, 'round'],
+		outputs: [units.self, units.enemy, 'round']
+	}
 };
 
-// Special nodes.
-nodes['root'] = {
-	inputs: [units.self, units.enemy, 'round'],
-	outputs: [units.self, units.enemy, 'round']
-};
+// Specials ...
 nodes['filter'] = {
-	inputs: [titles.units.name, 'byType', 'byHealth', 'byPosition'],
+	inputs: [titles.units.name],
 	outputs: [titles.units.name],
-	criterias: ['byType', 'byHealth', 'byPosition'],
+	criterias: ['type', 'health', 'position'],
 	operators: funcs.operators.names
 };
+for (var crt of nodes.filter.criterias) {
+	nodes.filter.inputs.push(crt);
+}
+
 nodes['manipulator'] = {
 	inputs: ['left', 'right', 'operation'],
-	outputs: ['result'],
-	operations: ['intersection', 'union', 'difference']
+	outputs: ['ships'],
+	operations: {
+		names: ['intersection', 'union', 'difference'],
+		intersection: funcs.sets.intersection,
+		union: funcs.sets.union,
+		difference: funcs.sets.difference
+	}
 };
+
 nodes['conditional'] = {
 	inputs: ['left', 'right', 'operator'],
 	outputs: ['result'],
 	operators: funcs.operators.names
 };
+
 nodes['fork'] = {
 	inputs: [units.self, units.enemy, 'result'],
-	outputs: ['onTrue_' + units.self, 'onTrue_' + units.enemy,
-			'onFalse_' + units.self, 'onFalse_' + units.enemy],
-	passing: [units.self, units.enemy]
+	outputs: [],
+	trueField: 'onTrue',
+	falseField: 'onFalse',
+	passing: [units.self, units.enemy, 'result']
 };
+for (var name of nodes.fork.passing) {
+	nodes.fork.outputs.push(nodes.fork.trueField+'_'+name);
+	nodes.fork.outputs.push(nodes.fork.falseField+'_'+name);
+}
+
 nodes['cmdFire'] = {
 	inputs: [units.self, units.enemy],
 	outputs: []
 };
+
 nodes['cmdHold'] = {
 	inputs: [units.self],
 	outputs: []
 };
+
 nodes['cmdMove'] = {
 	inputs: [units.self, 'offset', 'position'],
 	outputs: []
@@ -190,8 +229,8 @@ nodes['cmdMove'] = {
 // ------------------------------ MODULE EXPORT ------------------------------ //
 
 module.exports = {
-	project: titles.app.project,
-	appname: titles.app.name,
+	project: titles.project.fullname,
+	appname: titles.app.fullname,
 	shortname: titles.app.shortappname,
 	version: version,
 

@@ -2,7 +2,7 @@
 
 var unitsCfg = require('../core/config').engine.units;
 
-class BaseUnit {
+class Unit {
 	constructor(type) {
 		for (var i in unitsCfg.fields.names) {
 			var field = unitsCfg.fields.names[i];
@@ -13,6 +13,6 @@ class BaseUnit {
 
 
 module.exports = {
-	Unit: BaseUnit,
+	Unit: Unit,
 	config: unitsCfg
 };

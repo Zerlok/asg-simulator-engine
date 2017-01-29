@@ -51,10 +51,40 @@ const operators = {
 }
 
 
+function intersection(a, b) {
+	var result = [];
+	for (var i = 0; i < a.length; ++i)
+		if (b.indexOf(a[i]) != -1)
+			result.push(a[i]);
+	return result;
+}
+
+function union(a, b) {
+	var result = a.slice();
+	for (var i = 0; i < b.length; ++i)
+		if (a.indexOf(b[i]) == -1)
+			result.push(b[i]);
+	return result;
+}
+
+function difference(a, b) {
+	var result = [];
+	for (var i = 0; i < a.length; ++i)
+		if (b.indexOf(a[i]) == -1)
+			result.push(a[i]);
+	return result;
+}
+
+
 module.exports = {
 	clamp: clamp,
 	countable: countable,
 	operators: operators,
+	sets: {
+		intersection: intersection,
+		union: union,
+		difference: difference
+	},
 	objects: {
 		appender: appender,
 		builder: builder

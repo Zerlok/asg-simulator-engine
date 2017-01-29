@@ -1,13 +1,13 @@
 "use strict"
 
-var Units = require('./unit');
+var Units = require('./base');
 
 
 function fromJson(text) {
-	var lst = [];
 	if (text == null)
-		return lst;
+		return [];
 
+	var lst = [];
 	var data = JSON.parse(text);
 
 	for (var type in data) {

@@ -15,7 +15,7 @@ function fromJson(text) {
 		var node = nodeFactory.create(row.name, i, row.name);
 		for (var f in row.ins) {
 			var field = row.ins[f];
-			node.inputs[field.name].data = field.data;
+			node.inputs[field.name].setConstData(field.data);
 		}
 		lst.push(node);
 	}

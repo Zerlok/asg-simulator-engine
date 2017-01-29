@@ -3,27 +3,30 @@
 var chai = require('chai');
 var expect = chai.expect;
 
-var Units = require('../units/unit');
-Units.io = require('../units/io');
+var BaseUnits = require('../units/base');
+BaseUnits.io = require('../units/io');
 
 
-var units = [];
-var maxUnits = 2;
-for (var type in Units.config.types) {
-	for (var x = 0; x < maxUnits; ++x) {
-		units.push(new Units.Unit(type));
-	}
-}
+const maxUnits = 2;
+var unitsList = [];
 
 
 const tests = [
 	describe('Units', function() {
-		it('Simply parsing.', function() {
-			var text = Units.io.toJson(units);
-			var data = Units.io.fromJson(text);
+		it('Different types.', function() {
+			for (var type in BaseUnits.config.types) {
+				for (var x = 0; x < maxUnits; ++x) {
+					var unit = new BaseUnits.Unit(type);
+					unitsList.push(unit);
+					expect(unit.type).to.equal(type);
+				}
+			}
+		});
 
-			expect(units).to.eql(data);
-			console.log(data);
+		it('Simply parsing.', function() {
+			var text = BaseUnits.io.toJson(unitsList);
+			var data = BaseUnits.io.fromJson(text);
+			expect(data).to.eql(unitsList);
 		});
 	})
 ];
