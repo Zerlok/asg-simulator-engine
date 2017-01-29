@@ -231,7 +231,7 @@ var nodeFactory = new Factory();
 nodeFactory.registrate('root', RootNode);
 nodeFactory.registrate('filter', FilterNode);
 nodeFactory.registrate('manipulator', ManipulatorNode);
-nodeFactory.registrate('condition', ConditionalNode);
+nodeFactory.registrate('conditional', ConditionalNode);
 nodeFactory.registrate('fork', ForkNode);
 nodeFactory.registrate('cmdFire', FireCmdNode);
 nodeFactory.registrate('cmdHold', HoldCmdNode);
@@ -243,7 +243,7 @@ module.exports = {
 	Root: RootNode,
 	Filter: FilterNode,
 	Manipulator: ManipulatorNode,
-	Condition: ConditionalNode,
+	Conditional: ConditionalNode,
 	Fork: ForkNode,
 	CmdFire: FireCmdNode,
 	CmdHold: HoldCmdNode,

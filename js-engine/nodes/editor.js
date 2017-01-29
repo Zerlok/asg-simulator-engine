@@ -89,7 +89,7 @@ class NodeEditor {
 			return console.error('Input node is undefined!');
 
 		if (outNode.link(outPortNum, inPortNum, inNode))
-			console.log(`${outNode.name}.${outPortNum} output port attached to ${inNode.name}.${inPortNum} input port.`);
+			console.log(`'${outNode.name}:${outPortNum}' output port attached to '${inNode.name}:${inPortNum}' input port.`);
 	}
 
 	unlink(outNodeNum, outPortNum, inNodeNum, inPortNum) {

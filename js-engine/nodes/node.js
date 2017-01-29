@@ -7,11 +7,10 @@ class Port {
 		this.holder = holder;
 		this.data = null;
 		this.empty = true;
+		this.constant = false;
 		this.children = [];
 		this.parents = [];
 	}
-
-	get isEmpty() { return this.empty; }
 
 	isLinked(port) {
 		return (this.children.indexOf(port) != -1);
@@ -34,12 +33,21 @@ class Port {
 	}
 
 	clean() {
+		if (this.constant)
+			return;
+
 		this.data = null;
 		this.empty = true;
 	}
 
+	setData(value, constant) {
+		this.data = value;
+		this.empty = false;
+		this.constant = (constant || false);
+	}
+
 	receiveData(data) {
-		if (!this.empty) {
+		if (!this.empty && !this.constant) {
 			this.data = data;
 			this.empty = false;
 		}
@@ -76,7 +84,7 @@ class Node {
 	isReady() {
 		for (var name in this.inputs) {
 			var inPort = this.inputs[name];
-			if (inPort.isEmpty())
+			if (inPort.empty())
 				return false;
 		}
 		return true;

@@ -11,7 +11,7 @@ class Factory {
 			args.splice(0, 0, null); // FIXME: if you don't do that, the first argument is missed in constructor.
 			return new (Function.prototype.bind.apply(Cls, args));
 		};
-		console.log(`${name} registered.`);
+		// console.log(`${name} registered.`);
 	}
 
 	create() {
@@ -30,8 +30,7 @@ class Factory {
 		for (var i = 1; i < arguments.length; ++i)
 			args.push(arguments[i]);
 
-		console.log(`Factory creating '${name}' ...`);
-		// console.log(`Creating '${name}' with args(${args.length}): [${args}]`);
+		// console.log(`Factory creating '${name}' ...`);
 		return this.creators[name](args);
 	}
 

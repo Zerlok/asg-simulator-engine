@@ -18,10 +18,11 @@ function countable(x) {
 
 
 function appender(obj, fields, generators) {
-	var len = Math.min(fields.length, generators.length);
-	for (var i = 0; i < len; ++i) {
+	for (var i = 0; i < fields.length; ++i) {
 		var name = fields[i];
-		obj[name] = generators[name](i, name);
+		var fieldGen = generators[name];
+		if (fieldGen)
+			obj[name] = fieldGen(i, name);
 	}
 	return obj;
 }

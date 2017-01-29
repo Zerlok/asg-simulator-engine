@@ -34,8 +34,8 @@ function checkStrategy() {
 	console.log(nodes[4].isChildOf(nodes[0]));
 }
 
-// createStrategy(filename);
-neditor.load(filename);
+createStrategy(filename);
+// neditor.load(filename);
 
 // checkStrategy();
 neditor.showNodes();

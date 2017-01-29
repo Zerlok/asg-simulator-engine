@@ -2,6 +2,7 @@
 
 var nodeFactory = require('./specials').factory;
 
+
 function fromJson(text) {
 	var lst = [];
 	if (text == null)

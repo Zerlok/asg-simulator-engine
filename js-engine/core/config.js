@@ -52,6 +52,9 @@ const titles = {
 	}
 };
 
+const hp = 'health';
+const shp = 'shields';
+
 
 // ------------------------------ BATTLE CONFIG ------------------------------ //
 
@@ -82,6 +85,8 @@ var units = {
 	],
 	types: {}, // Will be filled by appender function (look down).
 	fields: {
+		names: titles.units.fields,
+
 		type: {},
 		health: {		minVal: 50,						maxVal: 10000000 },
 		shields: {		minVal: 50,						maxVal: 10000 },
@@ -92,14 +97,15 @@ var units = {
 		speed: {		minVal: 1,						maxVal: 2*Math.sqrt(Math.pow(width, 2) + Math.pow(height, 2))/(width+height) },
 		fuel: {			minVal: battle.maxRounds/2,		maxVal: battle.maxRounds*3/4 },
 		fuelWaste: {	minVal: 1,						maxVal: 1 },
-		score: {		minVal: 1000,					maxVal: 10000000 }
+		score: {		minVal: 1000,					maxVal: 10000000 },
+
+		generators: {}
 	},
 	scoreFields: ['health', 'shields', 'shieldRegen', 'speed', 'fuel'],
-	generators: {}
 };
-function clampUF(name, value) { return func.clamp(units.fields[name].minVal, units.fields[name].maxVal, value); }
-units.generators = {
-	type: function(n) { return 			units.typesOrder[n];										},
+function clampUF(name, value) { return funcs.clamp(units.fields[name].minVal, units.fields[name].maxVal, value); }
+units.fields.generators = {
+	"type": function(n) { return 			units.typesOrder[n];										},
 	health: function(n) { return		clampUF('health',		20*Math.pow(5, n+1)/(n+1));			},
 	shields: function(n) { return		clampUF('shields',		(n+10)*Math.pow(8, n+1));			},
 	shieldRegen: function(n) { return	clampUF('shieldRegen',	10*Math.pow(10, (n+1)/10));			},
@@ -109,16 +115,28 @@ units.generators = {
 	fuel: function(n) { return			clampUF('fuel',			25*Math.pow(n+1, 2));				},
 	fuelWaste: function(n) { return		clampUF('fuelWaste',	(n+1)/2*Math.pow(n, 2));			},
 };
-units.generators['score'] = function(n) {
-	const cntr = units.scoreFields.length-1;
+units.fields.generators['score'] = function(n) {
+	const cntr = units.scoreFields.length;
 	var sum = 0;
 	for (var i in units.scoreFields) {
 		var name = units.scoreFields[i];
-		sum += units.generators[name](n);
+		sum += units.fields.generators[name](n);
 	}
 	return (cntr * Math.pow(sum, 2/cntr));
 }
-funcs.objects.appender(units.types, units.typesOrder, units.generators); // Builds single unit for each type.
+
+// Create unit prototype for every type.
+for (var i in units.typesOrder) {
+	var type = units.typesOrder[i];
+	var obj = {};
+	for (var j = 0; j < units.fields.names.length; ++j) {
+		var name = units.fields.names[j];
+		var fieldGen = units.fields.generators[name];
+		if (fieldGen)
+			obj[name] = fieldGen(i);
+	}
+	units.types[type] = obj;
+}
 
 
 // ------------------------------ NODES CONFIG ------------------------------ //
