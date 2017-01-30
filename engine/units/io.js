@@ -1,6 +1,6 @@
 "use strict"
 
-var Units = require('./base');
+var Base = require('./base');
 
 
 function fromJson(text) {
@@ -13,7 +13,7 @@ function fromJson(text) {
 	for (var type in data) {
 		var amount = data[type];
 		for (var i = 0; i < amount; ++i) {
-			lst.push(new Units.Unit(type));
+			lst.push(new Base.Unit(type));
 		}
 	}
 
@@ -23,8 +23,8 @@ function fromJson(text) {
 
 function toJson(unitsList) {
 	var data = {};
-	for (var i in Units.config.typesOrder) {
-		var type = Units.config.typesOrder[i];
+	for (var i in Base.config.typesOrder) {
+		var type = Base.config.typesOrder[i];
 		data[type] = 0;
 	}
 
@@ -40,5 +40,5 @@ function toJson(unitsList) {
 module.exports = {
 	fromJson: fromJson,
 	toJson: toJson,
-	config: Units.config
+	base: Base
 }

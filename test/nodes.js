@@ -3,27 +3,26 @@
 var chai = require('chai');
 var expect = chai.expect;
 
-var Units = require('../engine/units/base');
-var Nodes = require('../engine/nodes/specials');
-Nodes.io = require('../engine/nodes/io');
-Nodes.Editor = require('../engine/nodes/editor').Editor;
+var Engine = require('../engine');
 
-var neditor = new Nodes.Editor();
+var neditor = new Engine.nodes.Editor();
 var nodes = neditor.nodes;
 var nodesTree, parsedNodes;
 
 var units = {attacker: [], defender: [], len: 5};
-for (var type in Units.config.types) {
+for (var type in Engine.units.config.types) {
 	for (var i = 0; i < units.len; ++i) {
-		units.attacker.push(new Units.Unit(type));
-		units.defender.push(new Units.Unit(type));
+		units.attacker.push(new Engine.units.Unit(type));
+		units.defender.push(new Engine.units.Unit(type));
 	}
 }
 
 
-describe("Nodes:", function() {
+// ------------------------- Custom Nodes Tests ------------------------- //
+
+describe("Nodes custom executions:", function() {
 	it("Root execution", function() {
-		var node = new Nodes.Root(0, 'node');
+		var node = new Engine.nodes.Root(0, 'node');
 		expect(node.isReady()).to.be.false;
 
 		node.initData(units.attacker, units.defender, 4);
@@ -37,7 +36,7 @@ describe("Nodes:", function() {
 
 	it("Filter execution", function() {
 		var node, filtered;
-		node = new Nodes.Filter(0, 'node');
+		node = new Engine.nodes.Filter(0, 'node');
 		expect(node.isReady()).to.be.false;
 
 		node.inputs.ships.setConstData(units.attacker);
@@ -48,7 +47,7 @@ describe("Nodes:", function() {
 		node.execute();
 		expect(node.outputs.ships.data).to.eql(filtered);
 
-		node = new Nodes.Filter(0, 'node');
+		node = new Engine.nodes.Filter(0, 'node');
 		node.inputs.ships.setConstData(units.defender);
 		node.inputs.health.setConstData({'op': 'lt', 'value': 200});
 		filtered = units.defender.filter(function(x){ if (x.health < 200) return x; });
@@ -58,7 +57,7 @@ describe("Nodes:", function() {
 
 	it("Manipulator execution", function() {
 		var node;
-		node = new Nodes.Manipulator(0, 'node');
+		node = new Engine.nodes.Manipulator(0, 'node');
 		expect(node.isReady()).to.be.false;
 
 		node.inputs.left.setConstData(units.attacker);
@@ -71,7 +70,7 @@ describe("Nodes:", function() {
 
 	it("Conditional execution", function() {
 		var node;
-		node = new Nodes.Conditional(0, 'node');
+		node = new Engine.nodes.Conditional(0, 'node');
 		node.inputs.left.setConstData(units.attacker);
 		node.inputs.right.setConstData(200);
 
@@ -91,7 +90,7 @@ describe("Nodes:", function() {
 
 	it("Fork execution", function() {
 		var node;
-		node = new Nodes.Fork(0, 'node');
+		node = new Engine.nodes.Fork(0, 'node');
 		node.inputs.own.setConstData(units.attacker);
 		node.inputs.enemies.setConstData(units.defender);
 
@@ -129,11 +128,16 @@ describe("Nodes:", function() {
 		var node;
 		expect(false).to.be.ok;
 	});
+});
 
+
+// ------------------------- Strategy Tests ------------------------- //
+
+describe("Strategy editing and execution:", function() {
 	it("Every node is registered in node factory", function() {
-		for (var i in Nodes.config.types) {
-			var name = Nodes.config.types[i];
-			var node = Nodes.factory.create(name, i, name);
+		for (var i in Engine.nodes.config.types) {
+			var name = Engine.nodes.config.types[i];
+			var node = Engine.nodes.factory.create(name, i, name);
 
 			expect(node).to.be.ok;
 			expect(node.id).to.equal(i);
@@ -253,9 +257,9 @@ describe("Nodes:", function() {
 	});
 
 	it("Circular links checker works", function() {
-		var vertex = function() { return new Nodes.base.Node(0, 'node', ['foo'], ['bar']); };
+		var vertex = function() { return new Engine.nodes.base.Node(0, 'node', ['foo'], ['bar']); };
 		expect(nodes[0].name).to.equal('root');
-		expect(Nodes.base.isCircular(nodes[0])).to.be.false;
+		expect(Engine.nodes.base.isCircular(nodes[0])).to.be.false;
 
 		var N = 20;
 		var graph = [vertex()];
@@ -264,11 +268,11 @@ describe("Nodes:", function() {
 			graph[i].link('bar', v, 'foo');
 			graph.push(v);
 		}
-		expect(Nodes.base.isCircular(graph[0])).to.be.false;
+		expect(Engine.nodes.base.isCircular(graph[0])).to.be.false;
 		graph[N-1].link('bar', graph[0], 'foo');
-		expect(Nodes.base.isCircular(graph[0])).to.be.true;
+		expect(Engine.nodes.base.isCircular(graph[0])).to.be.true;
 		graph[N-1].unlink('bar', graph[0], 'foo');
-		expect(Nodes.base.isCircular(graph[0])).to.be.false;
+		expect(Engine.nodes.base.isCircular(graph[0])).to.be.false;
 
 		var link = function(graph, o, i) { return graph[o].link('bar', graph[i], 'foo'); }
 		N = 9;
@@ -285,19 +289,19 @@ describe("Nodes:", function() {
 		link(graph, 5, 6);
 		link(graph, 6, 7);
 		link(graph, 8, 6);
-		expect(Nodes.base.isCircular(graph[0])).to.be.false; // no loop yet.
+		expect(Engine.nodes.base.isCircular(graph[0])).to.be.false; // no loop yet.
 
 		link(graph, 7, 8); // this is a loop!
-		expect(Nodes.base.isCircular(graph[0])).to.be.true;
+		expect(Engine.nodes.base.isCircular(graph[0])).to.be.true;
 		graph[7].unlink('bar', graph[8], 'foo');
 
 		link(graph, 8, 7); // doesn't a loop.
-		expect(Nodes.base.isCircular(graph[0])).to.be.false; // still no loops.
+		expect(Engine.nodes.base.isCircular(graph[0])).to.be.false; // still no loops.
 	});
 
 	it("Level sort function works", function() {
 		expect(nodes[0].name).to.equal('root');
-		nodesTree = Nodes.base.buildLSH(nodes[0]);
+		nodesTree = Engine.nodes.base.buildLST(nodes[0]);
 		expect(nodesTree.data).to.have.lengthOf(5);
 
 		var i, j;
@@ -317,8 +321,8 @@ describe("Nodes:", function() {
 	});
 
 	it("Simple JSON import/export works", function() {
-		var text = Nodes.io.toJson(nodes);
-		parsedNodes = Nodes.io.fromJson(text);
+		var text = Engine.nodes.io.toJson(nodes);
+		parsedNodes = Engine.nodes.io.fromJson(text);
 
 		var namer = function(node) { return node.name+'-'+node.id; };
 		var names = nodes.map(namer);

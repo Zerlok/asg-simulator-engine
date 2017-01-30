@@ -5,14 +5,14 @@ Used modules: express, body-parser, cookie-parser, multer (https://www.tutorials
 var http = require('http');
 var express = require('express');
 var bodyParser = require('body-parser');
-var simulator = require('./battle/simulator');
+var Cfg = require('./config');
 
 
 const config = {
 	host: 'localhost',
 	port: 8000,
-	appname: simulator.config.appname,
-	app: simulator.config.shortname
+	appname: Cfg.engine.appname,
+	app: Cfg.engine.shortname
 };
 var app = express();
 var urlParser = bodyParser.urlencoded({ extended: false });
@@ -24,12 +24,12 @@ app.get('/', function (request, response) {
 
 app.get('/battle', function(request, response) {
 	var q = request.query;
-	var attacker = new simulator.Player(q.attackerName, q.attackerUnits, q.attackerNodes);
-	var defender = new simulator.Player(q.defenderName, q.defenderUnits, q.defenderNodes);
+	var attacker = new Battle.Player(q.attackerName, q.attackerUnits, q.attackerNodes);
+	var defender = new Battle.Player(q.defenderName, q.defenderUnits, q.defenderNodes);
 
-	var result = simulator.simulateBattle(attacker, defender);
+	var result = Battle.simulateBattle(attacker, defender);
 
-	response.end(result);
+	response.end(JSON.stringify(q));
 });
 
 
@@ -41,4 +41,4 @@ var server = app.listen(config.port, function () {
 })
 
 
-console.log(`Running simulator server on ${config.host}:${config.port} ...`);
+console.log(`Running Simulator server on ${config.host}:${config.port} ...`);

@@ -1,7 +1,7 @@
 "use strict"
 
 var Base = require('./base');
-var cfg = require('../core/config').engine;
+var cfg = require('../config').engine;
 var nodesCfg = cfg.nodes;
 
 
@@ -49,7 +49,7 @@ class FilterNode extends Base.Node {
 		var Criteria = function(fieldName, opName, value) {
 			return {
 				field: fieldName,
-				operator: cfg.nodes.filter.operators[opName],
+				operator: nodesCfg.filter.operators[opName],
 				value: value,
 				validate: function(unit) {
 					return this.operator(unit[this.field], this.value);
@@ -68,7 +68,7 @@ class FilterNode extends Base.Node {
 					lst.push(new Criteria(fieldName, 'eq', data));
 
 				} else if ((data.op != null)
-							&& cfg.nodes.filter.operators.hasOwnProperty(data.op)
+							&& nodesCfg.filter.operators.hasOwnProperty(data.op)
 							&& data.hasOwnProperty('value')) {
 					lst.push(new Criteria(fieldName, data.op, data.value));
 
@@ -231,10 +231,10 @@ module.exports = {
 	Manipulator: ManipulatorNode,
 	Conditional: ConditionalNode,
 	Fork: ForkNode,
+
 	CmdFire: FireCmdNode,
 	CmdHold: HoldCmdNode,
 	CmdMove: MoveCmdNode,
-	factory: nodeFactory,
-	base: Base,
-	config: nodesCfg
+
+	factory: nodeFactory
 };

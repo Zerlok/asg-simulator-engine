@@ -1,6 +1,6 @@
 "use strict"
 
-const funcs = require('../common/functions');
+const Funcs = require('./common/functions');
 
 
 // ------------------------------ TITLES ------------------------------ //
@@ -124,7 +124,7 @@ var units = {
 };
 
 // Create generator functions (field value setters by unit type).
-function clampUF(name, value) { return funcs.clamp(units.fields[name].minVal, units.fields[name].maxVal, value); }
+function clampUF(name, value) { return Funcs.clamp(units.fields[name].minVal, units.fields[name].maxVal, value); }
 units.fields.generators = {
 	"type": function(n) { return 			units.typesOrder[n];										},
 	health: function(n) { return		clampUF('health',		20*Math.pow(5, n+1)/(n+1));			},
@@ -176,7 +176,7 @@ nodes['filter'] = {
 	inputs: [titles.units.name],
 	outputs: [titles.units.name],
 	criterias: ['type', 'health', 'position'],
-	operators: funcs.operators
+	operators: Funcs.operators
 };
 for (var crt of nodes.filter.criterias) {
 	nodes.filter.inputs.push(crt);
@@ -187,16 +187,16 @@ nodes['manipulator'] = {
 	outputs: ['ships'],
 	operations: {
 		names: ['intersection', 'union', 'difference'],
-		intersection: funcs.sets.intersection,
-		union: funcs.sets.union,
-		difference: funcs.sets.difference
+		intersection: Funcs.sets.intersection,
+		union: Funcs.sets.union,
+		difference: Funcs.sets.difference
 	}
 };
 
 nodes['conditional'] = {
 	inputs: ['left', 'right', 'operator'],
 	outputs: ['result'],
-	operators: funcs.operators
+	operators: Funcs.operators
 };
 
 nodes['fork'] = {

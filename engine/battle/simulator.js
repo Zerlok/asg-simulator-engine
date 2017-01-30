@@ -1,11 +1,10 @@
 "use strict"
 
-const cfg = require('../core/config').engine;
+const cfg = require('../config').engine;
 const maxRounds = cfg.battle.maxRounds;
 
-var UnitsIO = require('../units/io');
-var Nodes = require('../nodes/base');
-Nodes.io = require('../nodes/io');
+var Units = require('../units');
+var Nodes = require('../nodes');
 
 
 function swap(a, b) {
@@ -18,7 +17,7 @@ function swap(a, b) {
 class Player {
 	constructor(name, units, nodes) {
 		this.name = name;
-		this.units = {initial: UnitsIO.fromJson(units), current: []};
+		this.units = {initial: Units.io.fromJson(units), current: []};
 		this.strategy = Nodes.io.fromJson(nodes);
 		// this.state = cfg.battle.defaultState;
 	}
@@ -119,5 +118,4 @@ function simulateBattle(attacker, defender) {
 module.exports = {
 	Player: Player,
 	simulateBattle: simulateBattle,
-	config: cfg
 };

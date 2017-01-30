@@ -1,7 +1,7 @@
 "use strict"
 
 
-var Tree = function(value) {
+var LevelContainer = function(value) {
 	return {
 		data: [[value]],
 		find: function(value) {
@@ -66,6 +66,6 @@ var Iterator = function(begin, speed) {
 
 
 module.exports = {
-	Tree: Tree,
+	LevelContainer: LevelContainer,
 	Iterator: Iterator
 };

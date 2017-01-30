@@ -1,6 +1,7 @@
 "use strict"
 
 var Structs = require('../common/structs');
+var nodesCfg = require('../config').engine.nodes;
 
 
 class Port {
@@ -256,7 +257,7 @@ class Node {
 }
 
 
-function isCircular(rootNode) {
+function hasCircularLinks(rootNode) {
 	var iterators = {
 		fast: new Structs.Iterator(rootNode, 1),
 		slow: new Structs.Iterator(rootNode, 2)
@@ -286,8 +287,8 @@ function isCircular(rootNode) {
 }
 
 
-function buildLevelSortedHierarchy(rootNode) {
-	var tree = new Structs.Tree(rootNode);
+function buildLevelSortedTree(rootNode) {
+	var tree = new Structs.LevelContainer(rootNode);
 	var queue = [rootNode];
 	var node, pos;
 	var children, i, child, childPos;
@@ -315,6 +316,7 @@ function buildLevelSortedHierarchy(rootNode) {
 module.exports = {
 	Port: Port,
 	Node: Node,
-	buildLSH: buildLevelSortedHierarchy,
-	isCircular: isCircular
+	isCircular: hasCircularLinks,
+	buildLST: buildLevelSortedTree,
+	config: nodesCfg
 };

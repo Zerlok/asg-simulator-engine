@@ -83,5 +83,5 @@ function toJson(nodeList) {
 
 module.exports = {
 	fromJson: fromJson,
-	toJson: toJson
+	toJson: toJson,
 }

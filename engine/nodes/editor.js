@@ -2,13 +2,15 @@
 
 var fs = require('fs');
 var Nodes = require('./specials');
+Nodes.base = require('./base');
 Nodes.io = require('./io');
 
 
-class NodeEditor {
-	constructor() {
+class Editor {
+	constructor(prompt) {
 		this.cntr = 0;
 		this.nodes = [];
+		this.print = (prompt) ? function(msg){console.log(msg);} : function(msg){};
 		this.createNode('root');
 	}
 
@@ -16,7 +18,8 @@ class NodeEditor {
 		fs.writeFile(filename, Nodes.io.toJson(this.nodes), function(err) {
 			if (err) return console.error(`Caught an error: ${err} while writing into '${filename}' file!`);
 		});
-		console.log(`Nodes were written into ${filename} successfuly.`);
+
+		this.print(`Nodes were written into ${filename} successfuly.`);
 	}
 
 	load(filename) {
@@ -24,7 +27,7 @@ class NodeEditor {
 			if (err) return console.error(`Caught an error: ${err} while reading '${filename}' file!`);
 		});
 		this.nodes = Nodes.io.fromJson(text);
-		console.log(`Nodes were loaded from ${filename} successfuly.`);
+		this.print(`Nodes were loaded from ${filename} successfuly.`);
 	}
 
 	createNode(name) {
@@ -38,7 +41,7 @@ class NodeEditor {
 
 		this.nodes.push(node);
 		++this.cntr;
-		console.log(`Node ${node.name}-${node.id} created successfuly.`);
+		this.print(`Node ${node.name}-${node.id} created successfuly.`);
 		return node;
 	}
 
@@ -69,7 +72,7 @@ class NodeEditor {
 
 		this.nodes.splice(idx, 1);
 		// delete node; // FIXME: can't delete in strict mode.
-		console.log(`Node ${node.name} removed successfuly.`);
+		this.print(`Node ${node.name} removed successfuly.`);
 		return true;
 	}
 
@@ -99,7 +102,7 @@ class NodeEditor {
 			return console.error(`Input node ${inNodeNum} was not found!`);
 
 		if (outNode.link(output, inNode, input))
-			console.log(`'${outNode.name}:${output}' output port attached to '${inNode.name}:${input}' input port.`);
+			this.print(`'${outNode.name}:${output}' output port attached to '${inNode.name}:${input}' input port.`);
 
 		return true;
 	}
@@ -115,7 +118,7 @@ class NodeEditor {
 			return console.error(`Input node ${inNodeNum} was not found!`);
 
 		if (outNode.unlink(output, inNode, input))
-			console.log(`${outNode.name}.${output} output port deattached from ${inNode.name}.${input} input port.`);
+			this.print(`${outNode.name}.${output} output port deattached from ${inNode.name}.${input} input port.`);
 
 		return true;
 	}
@@ -123,7 +126,7 @@ class NodeEditor {
 	validate() {
 		var result = Nodes.base.isCircular(this.nodes[0]);
 		if (!result)
-			console.log('All nodes are valid.');
+			this.print('All nodes are valid.');
 		else
 			console.warn('Nodes structure has loops!');
 	}
@@ -139,27 +142,33 @@ class NodeEditor {
 		var children = node.getChildren().map(function(child){ return child.name + '-' + child.id; });
 		var parents = node.getParents().map(function(parent){ return parent.name + '-' + parent.id });
 
-		console.log('<node>');
-		console.log(`	<name>${node.name}-${node.id}</name>`);
-		console.log(`	<inputs len=${ins.length}>[${ins}]</inputs>`);
-		console.log(`	<values len=${vals.length}>[${vals}]</values>`);
-		console.log(`	<outputs len=${outs.length}>[${outs}]</outputs>`);
-		console.log(`	<parents len=${parents.length}>[${parents}]</parents>`);
-		console.log(`	<children len=${children.length}>[${children}]</children>`);
-		console.log('</node>');
+		this.print('<node>');
+		this.print(`	<name>${node.name}-${node.id}</name>`);
+		this.print(`	<inputs len=${ins.length}>[${ins}]</inputs>`);
+		this.print(`	<values len=${vals.length}>[${vals}]</values>`);
+		this.print(`	<outputs len=${outs.length}>[${outs}]</outputs>`);
+		this.print(`	<parents len=${parents.length}>[${parents}]</parents>`);
+		this.print(`	<children len=${children.length}>[${children}]</children>`);
+		this.print('</node>');
 	}
 
 	showNodes() {
-		console.log(`Total ${this.nodes.length} nodes:`);
+		var tmp = this.print;
+		this.print = function(msg){console.log(msg);};
+
+		this.print(`Total ${this.nodes.length} nodes:`);
 		this.validate();
-		console.log(`Hierarchy level depth: ${Nodes.base.buildLSH(this.nodes[0]).data.length}`);
+
+		var levelTree = Nodes.base.buildLST(this.nodes[0]);
+		this.print(`Hierarchy level depth: ${levelTree.data.length}`);
+
 		for (var i in this.nodes) {
 			this.showNode(i);
 		}
+
+		this.print = tmp;
 	}
 }
 
 
-module.exports = {
-	Editor: NodeEditor
-}
+module.exports = Editor;

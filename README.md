@@ -6,14 +6,12 @@ If you have any ideas or have an advice for us, please, write to denergytro@gmai
 
 ## How to run that? ##
 
-Just install QtCreator and pull that repo. If you want to run gtest app, you have to install Google Unit Tests on your machine.
+Just install Atom editor and pull that repo, make sure you have installed NodeJS modules. We are also using Mocha test framework.
 
-# About main classes #
+# Architecture #
 
-## NodeSimulator ##
+## Unit ##
 
-This class simulates two strategies between each other. Required 4 txt files: attacker units and strategy files and defender units and strategy files.
+A single ship with custom properties like hull, shield, position, etc.
 
-## NodeEditor ##
-
-This class allows create custom strategies in command line.
+## Node ##

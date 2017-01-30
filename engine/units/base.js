@@ -1,6 +1,7 @@
 "use strict"
 
-var unitsCfg = require('../core/config').engine.units;
+var unitsCfg = require('../config').engine.units;
+
 
 class Unit {
 	constructor(type) {
