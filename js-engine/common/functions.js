@@ -7,10 +7,10 @@ function clamp(a, b, c) {
 
 
 function countable(x) {
-	if (Array.isArray(x)) {
-		return x.length;
-	} else if (x == null) {
+	if (x == null) {
 		return 0;
+	} else if (Array.isArray(x)) {
+		return x.length;
 	} else {
 		return x;
 	}

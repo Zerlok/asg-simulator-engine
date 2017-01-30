@@ -51,16 +51,15 @@ class Port {
 	}
 
 	receiveData(data) {
-		if (!this.empty && !this.constant) {
+		if (this.empty && !this.constant) {
 			this.data = data;
 			this.empty = false;
 		}
 	}
 
 	pushData() {
-		for (var i in this.children) {
-			var child = this.children[i];
-			child.receiveData(this.data);
+		for (var i = 0; i < this.children.length; ++i) {
+			this.children[i].receiveData(this.data);
 		}
 	}
 }
@@ -88,7 +87,7 @@ class Node {
 	isReady() {
 		for (var name in this.inputs) {
 			var inPort = this.inputs[name];
-			if (inPort.empty())
+			if (inPort.empty)
 				return false;
 		}
 		return true;
@@ -218,9 +217,9 @@ class Node {
 	}
 
 	pushData() {
-		this.outputs.forEach(function(output) {
-			output.pushData();
-		});
+		for (var name in this.outputs) {
+			this.outputs[name].pushData();
+		}
 	}
 
 	refreshInputs() {
@@ -247,10 +246,7 @@ class Node {
 		// this.refreshOutputs();
 		this._executeSpecial();
 		// this.refreshInputs();
-		for (var name in this.outputs) {
-			var outPort = this.outputs[name];
-			outPort.pushData();
-		}
+		this.pushData();
 	}
 
 	_executeSpecial() {

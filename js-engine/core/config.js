@@ -91,6 +91,7 @@ const battle = {
 // ------------------------------ UNITS CONFIG ------------------------------ //
 
 var units = {
+	name: titles.units.name,
 	self: titles.battle.side.self,
 	enemy: titles.battle.side.enemy,
 
@@ -175,7 +176,7 @@ nodes['filter'] = {
 	inputs: [titles.units.name],
 	outputs: [titles.units.name],
 	criterias: ['type', 'health', 'position'],
-	operators: funcs.operators.names
+	operators: funcs.operators
 };
 for (var crt of nodes.filter.criterias) {
 	nodes.filter.inputs.push(crt);
@@ -195,7 +196,7 @@ nodes['manipulator'] = {
 nodes['conditional'] = {
 	inputs: ['left', 'right', 'operator'],
 	outputs: ['result'],
-	operators: funcs.operators.names
+	operators: funcs.operators
 };
 
 nodes['fork'] = {

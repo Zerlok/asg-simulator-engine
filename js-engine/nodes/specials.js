@@ -1,7 +1,8 @@
 "use strict"
 
 var Base = require('./base');
-var nodesCfg = require('../core/config').engine.nodes;
+var cfg = require('../core/config').engine;
+var nodesCfg = cfg.nodes;
 
 
 // --------------------------- Logical Nodes --------------------------- //
@@ -14,13 +15,13 @@ class RootNode extends Base.Node {
 	initData() {
 		var keys = Object.keys(this.inputs);
 		for (var i = 0; i < Math.min(arguments.length, keys.length); ++i) {
-			this.inputs[keys[i]] = arguments[i];
+			this.inputs[keys[i]].setConstData(arguments[i]);
 		}
 	}
 
 	_executeSpecial() {
 		for (var name in this.inputs) {
-			this.outputs[name] = this.inputs[name];
+			this.outputs[name].data = this.inputs[name].data;
 		}
 	}
 }
@@ -31,9 +32,13 @@ class FilterNode extends Base.Node {
 	}
 
 	isReady() {
+		var shipsPort = this.inputs[cfg.units.name];
+		if (shipsPort.empty)
+			return false;
+
 		for (var name in this.inputs) {
 			var inPort = this.inputs[name];
-			if (!inPort.isEmpty() && (inPort.name != cfg.units.titleing.name))
+			if (!inPort.empty && (name != cfg.units.name))
 				return true;
 		}
 
@@ -41,25 +46,34 @@ class FilterNode extends Base.Node {
 	}
 
 	criterias() {
+		var Criteria = function(fieldName, opName, value) {
+			return {
+				field: fieldName,
+				operator: cfg.nodes.filter.operators[opName],
+				value: value,
+				validate: function(unit) {
+					return this.operator(unit[this.field], this.value);
+				}
+			};
+		};
+
 		var lst = [];
 		for (var i in nodesCfg.filter.criterias) {
 			var fieldName = nodesCfg.filter.criterias[i];
 			var data = this.inputs[fieldName].data;
 			var type = typeof data;
 			if (data != null) {
-				if ((type == "number") || (type == "string")) {
-					lst.push(function(unit){ return cfg.operators.eq(unit[fieldName], data); });
+				if ((type == "number")
+						|| (type == "string")) {
+					lst.push(new Criteria(fieldName, 'eq', data));
 
-				} else if ((data.op != null) && cfg.operators.hasOwnProperty(data.op)) {
-					var op = cfg.operators[data.op];
-					if (data.hasOwnProperty('value')) {
-						lst.push(function(unit){ return op(unit[fieldName], data.value); });
-					} else {
-						console.error(`Invalid criteria arguments: ${data}, must have 'value' field!`);
-					}
+				} else if ((data.op != null)
+							&& cfg.nodes.filter.operators.hasOwnProperty(data.op)
+							&& data.hasOwnProperty('value')) {
+					lst.push(new Criteria(fieldName, data.op, data.value));
 
 				} else {
-					console.error(`Can't create criteria with undefined operator '${data.op}'!`);
+					console.error(`Can't create criteria with parametrs op='${data.op}', value='${data.value}'!`);
 				}
 			}
 		}
@@ -69,23 +83,13 @@ class FilterNode extends Base.Node {
 
 	_executeSpecial() {
 		// TODO: make byPosition criteria be an area (horizontal and vertical ranges).
-		this.outputs.units = [];
 		var criterias = this.criterias();
-
-		var valid;
-		for (var i in this.inputs.units) {
-			var unit = this.inputs.units[i];
-
-			// TODO: Use map instead.
-			valid = true;
-			for (var i in criterias) {
-				var criteria = criterias[i];
-				valid = valid && criteria(unit);
-			}
-
-			if (valid)
-				this.outputs.units.push(unit);
-		}
+		this.outputs.ships.data = this.inputs.ships.data.filter(function(unit) {
+			for (var i = 0; i < criterias.length; ++i)
+				if (!criterias[i].validate(unit))
+					return null;
+			return unit;
+		});
 	}
 }
 
@@ -96,11 +100,11 @@ class ManipulatorNode extends Base.Node {
 
 	_executeSpecial() {
 		var name = this.inputs.operation.data;
-		var op = this.operations[name];
+		var op = nodesCfg.manipulator.operations[name];
 		if (op == null)
 			return console.error(`Undefined operation: ${name}!`);
 
-		this.outputs.units.data = op(this.inputs.left.data, this.inputs.right.data);
+		this.outputs.ships.data = op(this.inputs.left.data, this.inputs.right.data);
 	}
 }
 
@@ -110,16 +114,13 @@ class ConditionalNode extends Base.Node {
 	}
 
 	_executeSpecial() {
-		var result = false;
 		var name = this.inputs.operator.data;
-		if (cfg.operators.hasOwnProperty(name)) {
-			var op = cfg.operators[name];
-			result = op(this.inputs.left.data, this.inputs.right.data);
+		if (nodesCfg.conditional.operators.hasOwnProperty(name)) {
+			var op = nodesCfg.conditional.operators[name];
+			this.outputs.result.data = op(this.inputs.left.data, this.inputs.right.data);
 		} else {
-			console.error(`Can't use undefined operator '${name}'!`);
+			return console.error(`Can't use undefined operator '${name}'!`);
 		}
-
-		this.outputs.data = result;
 	}
 }
 
@@ -129,38 +130,24 @@ class ForkNode extends Base.Node {
 		this[nodesCfg.fork.trueField] = {};
 		this[nodesCfg.fork.falseField] = {};
 		for (var name of nodesCfg.fork.passing) {
-			this[nodesCfg.fork.trueField] = this.outputs[nodesCfg.fork.trueField+'_'+name];
-			this[nodesCfg.fork.falseField] = this.outputs[nodesCfg.fork.falseField+'_'+name]
+			this[nodesCfg.fork.trueField][name] = this.outputs[nodesCfg.fork.trueField+'_'+name];
+			this[nodesCfg.fork.falseField][name] = this.outputs[nodesCfg.fork.falseField+'_'+name]
 		}
 	}
 
-	onResult(result, field) {
-		if (result) {
-			return this.onTrue(field);
+	getOutput(field) {
+		if (this.inputs.result.data) {
+			return this[nodesCfg.fork.trueField][field];
 		} else {
-			return this.onFalse(field);
+			return this[nodesCfg.fork.falseField][field];
 		}
-	}
-
-	onTrue(field) {
-		return this[nodesCfg.fork.trueField][field];
-	}
-
-	onFalse(field) {
-		return this[nodesCfg.fork.trueField][field];
 	}
 
 	_executeSpecial() {
-		var outputSelector;
-		if (this.inputs.result.data) {
-			outputSelector = this.onTrue;
-		} else {
-			outputSelector = this.onFalse;
-		}
-
+		this.refreshOutputs();
 		for (var i in nodesCfg.fork.passing) {
 			var name = nodesCfg.fork.passing[i];
-			outputSelector(name) = this.inputs[name].data;
+			this.getOutput(name).data = this.inputs[name].data;
 		}
 	}
 }
