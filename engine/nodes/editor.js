@@ -28,6 +28,7 @@ class Editor {
 		});
 		this.nodes = Nodes.io.fromJson(text);
 		this.print(`Nodes were loaded from ${filename} successfuly.`);
+		return this.nodes;
 	}
 
 	createNode(name) {

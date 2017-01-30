@@ -23,8 +23,8 @@ function fromJson(text) {
 
 function toJson(unitsList) {
 	var data = {};
-	for (var i in Base.config.typesOrder) {
-		var type = Base.config.typesOrder[i];
+	for (var i in Base.config.hierarchy) {
+		var type = Base.config.hierarchy[i];
 		data[type] = 0;
 	}
 

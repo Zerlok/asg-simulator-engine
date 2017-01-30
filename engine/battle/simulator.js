@@ -7,18 +7,14 @@ var Units = require('../units');
 var Nodes = require('../nodes');
 
 
-function swap(a, b) {
-	tmp = a;
-	a = b;
-	b = a;
-}
-
-
 class Player {
 	constructor(name, units, nodes) {
 		this.name = name;
-		this.units = {initial: Units.io.fromJson(units), current: []};
-		this.strategy = Nodes.io.fromJson(nodes);
+		this.units = {initial: units, current: units.slice() };
+		this.strategy = nodes;
+		this.score = 0;
+		// this.units = { initial: Units.io.fromJson(units), current: [] };
+		// this.strategy = Nodes.io.fromJson(nodes);
 		// this.state = cfg.battle.defaultState;
 	}
 
@@ -37,7 +33,7 @@ class Player {
 		}
 
 		if (rootNode == null)
-			return console.error(`Root node was not found in ${this.name} player strategy!`);
+			return console.error(`Root node was not found in '${this.name}' player strategy!`);
 
 		rootNode.id = 0;
 		return rootNode;
@@ -55,21 +51,21 @@ class Player {
 			return false;
 		}
 
-		this.strategy = Nodes.getTHL(rootNode); // TODO: Save nodes as linear array.
+		this.strategy = Nodes.base.buildLST(rootNode).data;
 		return true;
 	}
 
 	updateState() {
-		var lst = []
-		for (var i in this.units.current) {
-			var unit = this.units.current[i];
-			if (unit.isAlive())
+		var lst = [];
+		var unit;
+		for (var i = 0; i < this.units.current.length; ++i) {
+			unit = this.units.current[i];
+			if (!unit.isAlive()) {
+				this.score += unit.score;
+			} else {
 				lst.push(unit);
+			}
 		}
-
-		if (lst.length == 0)
-			this.state = Nodes.config.battle.states[2];
-
 		this.units.current = lst;
 	}
 }
@@ -82,35 +78,44 @@ function simulateBattle(attacker, defender) {
 		return console.error(`Defender '${defender.name}' is invalid! Exiting battle simulation ...`);
 	}
 
-	var active = attacker;
-	var inactive = defender;
+	var active, inactive;
+	var players = [attacker, defender];
+	var idx = 0;
 
-	for (var i = 0; i < maxRounds; ++i) {
+	var l, i, levels;
+	var node, rootNode;
+
+	// for (var round = 0; round < 2; ++i) {
+	for (var round = 0; round < maxRounds; ++round) {
+		active = players[(idx%2)];
+		inactive = players[1 - (idx%2)];
+
 		active.updateState();
-		if (active.isReady())
+		if (!active.isReady())
 			break;
 
-		var levels = active.strategy;
-		var rootNode = levels[0][0];
-		rootNode.setData(active.units.current, inactive.units.current, i/2, active.state);
+		levels = active.strategy;
+		rootNode = levels[0][0];
+		console.log(`${round}: ${active.name} turn ...`);
+		rootNode.initData(active.units.current, inactive.units.current, round/2, active.state);
 
-		for (var l in levels) {
-			var level = levels[l];
-			for (var i in level) {
-				var node = level[i];
+		for (l = 0; l < levels.length; ++l) {
+			for (i = 0; i < levels[l].length; ++i) {
+				node = levels[l][i];
 				if (node.isReady()) {
-					node.execute(); // TODO: Save node execution results into special BattleLogger.
+					console.log(`${node.name}-${node.id} execution ...`);
+					node.execute();
+					// node.pushData();
+					// TODO: Save node execution results into special BattleLogger.
+					node.refresh();
 				}
 			}
 		}
 
 		// Change players (attacker and defender) for next round step.
-		swap(active, inactive);
+		++idx;
 	}
 
-	console.log(`Battle simulation (${attacker.name} vs ${defender.name}) was finished.`);
-	console.log(`Attacker: units(${attacker.units.current.length})`);
-	console.log(`Defender: units(${defender.units.current.length})`);
 	// TODO: Create battle log file and save it.
 }
 

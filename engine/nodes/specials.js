@@ -1,5 +1,6 @@
 "use strict"
 
+var Funcs = require('../common/functions');
 var Base = require('./base');
 var cfg = require('../config').engine;
 var nodesCfg = cfg.nodes;
@@ -33,7 +34,7 @@ class FilterNode extends Base.Node {
 
 	isReady() {
 		var shipsPort = this.inputs[cfg.units.name];
-		if (shipsPort.empty)
+		if (shipsPort.empty || shipsPort.data == null)
 			return false;
 
 		for (var name in this.inputs) {
@@ -166,13 +167,26 @@ class FireCmdNode extends Base.Node {
 	}
 
 	_executeSpecial() {
-		console.log(`Order: ${this.inputs.own.data} to shoot to ${this.inputs.enemies}.`);
+		console.log(`Order: ${this.inputs.own.data.length} to shoot to ${this.inputs.enemies.data.length}.`);
 		// TODO: Check if units are self.
 		// TODO: Check if targets are enemies.
-
 		// TODO: Count total fire points.
 		// TODO: Choose damaging targets.
 		// TODO: Spread fire points between targets.
+
+		var totalDmg = 0;
+		this.inputs.own.data.forEach(function(unit){ totalDmg += unit.fire(); });
+
+		var len = this.inputs.enemies.data.length;
+		if (len == 0)
+			return;
+
+		while (totalDmg > 0) {
+			var target = this.inputs.enemies.data[Funcs.rand(0, len-1)];
+			var dmg = Funcs.rand(10, totalDmg/2);
+			target.receiveDamage(dmg);
+			totalDmg -= dmg;
+		}
 	}
 }
 
@@ -187,9 +201,13 @@ class HoldCmdNode extends Base.Node {
 	}
 
 	_executeSpecial() {
-		console.log(`Order: ${this.inputs.own.data} to hold their positions.`);
+		console.log(`Order: ${this.inputs.own.data.length} to hold their positions.`);
 		// TODO: Check if units are self.
 		// TODO: For each own unit call onHold()
+
+		for (var i = 0; i < this.inputs.own.data.length; ++i) {
+			this.inputs.own.data[i].restoreShields();
+		}
 	}
 }
 

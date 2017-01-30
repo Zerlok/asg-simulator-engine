@@ -84,7 +84,7 @@ const battle = {
 			message: function(att, def) { return "the battle between "+att.name+" and "+def.name+" ended in a draw"; }
 		}
 	},
-	maxRounds: 256
+	maxRounds: 1024
 };
 
 
@@ -95,7 +95,7 @@ var units = {
 	self: titles.battle.side.self,
 	enemy: titles.battle.side.enemy,
 
-	typesOrder: [
+	hierarchy: [
 		'fighter',
 		'hedgehopper',
 		'cruiser',
@@ -126,7 +126,7 @@ var units = {
 // Create generator functions (field value setters by unit type).
 function clampUF(name, value) { return Funcs.clamp(units.fields[name].minVal, units.fields[name].maxVal, value); }
 units.fields.generators = {
-	"type": function(n) { return 			units.typesOrder[n];										},
+	type: function(n) { return 			units.hierarchy[n];											},
 	health: function(n) { return		clampUF('health',		20*Math.pow(5, n+1)/(n+1));			},
 	shields: function(n) { return		clampUF('shields',		(n+10)*Math.pow(8, n+1));			},
 	shieldRegen: function(n) { return	clampUF('shieldRegen',	10*Math.pow(10, (n+1)/10));			},
@@ -147,8 +147,8 @@ units.fields.generators['score'] = function(n) {
 }
 
 // Create unit prototype for every type (using generators).
-for (var i in units.typesOrder) {
-	var type = units.typesOrder[i];
+for (var i in units.hierarchy) {
+	var type = units.hierarchy[i];
 	var obj = {};
 	for (var j = 0; j < units.fields.names.length; ++j) {
 		var name = units.fields.names[j];
@@ -231,9 +231,14 @@ nodes['cmdMove'] = {
 
 module.exports = {
 	project: titles.project.fullname,
-	appname: titles.app.fullname,
-	shortname: titles.app.shortappname,
-	version: version,
+
+	app: {
+		fullname: titles.app.fullname,
+		name: titles.app.shortappname,
+		version: version,
+		host: "localhost",
+		port: 8000
+	},
 
 	engine: {
 		units: units,

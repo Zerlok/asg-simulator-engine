@@ -6,6 +6,11 @@ function clamp(a, b, c) {
 }
 
 
+function rand(a, b) {
+	return Math.floor(Math.random() * (b-a) + a);
+}
+
+
 function countable(x) {
 	if (x == null) {
 		return 0;
@@ -79,6 +84,7 @@ function difference(a, b) {
 module.exports = {
 	clamp: clamp,
 	countable: countable,
+	rand: rand,
 	operators: operators,
 	sets: {
 		intersection: intersection,
