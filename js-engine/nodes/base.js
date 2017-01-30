@@ -1,5 +1,8 @@
 "use strict"
 
+var Structs = require('../common/structs');
+
+
 class Port {
 	constructor(id, name, holder) {
 		this.id = id;
@@ -257,51 +260,65 @@ class Node {
 }
 
 
-function getTreeHierarchyListFrom(rootNode) {
-	var l = 0;
-	var levels = [[rootNode]]; // TODO: REWRITE!
+function isCircular(rootNode) {
+	var iterators = {
+		fast: new Structs.Iterator(rootNode, 1),
+		slow: new Structs.Iterator(rootNode, 2)
+	};
+	var it;
+	var node;
+	var children, i;
 
-	// While have unfinished level (finished level means each node at last level hasn't got children nodes).
-	while (l < levels.length) {
-		// Looking through current level.
-		for (var i in levels[l]) {
-			var level = levels[l];
-			var node = level[i];
-			var children = node.children();
+	iterators.fast.next();
+	iterators.fast.queue = rootNode.getChildren();
 
-			// If node has children, then current level is not finished (is not last).
-			if (children.length > 0) {
-				if (l+1 == level.length) { // Add next level if required.
-					level.push([]);
-				}
-				var nextLevel = level[l+1];
+	while (!iterators.fast.equals(iterators.slow)) {
+		for (var type in iterators) {
+			it = iterators[type];
+			node = it.next();
+			if (node == null)
+				continue;
 
-				// For each child of current node.
-				for (var c in children) {
-					var child = children[c];
+			children = node.getChildren();
+			for (i = 0; i < children.length; ++i) {
+				it.uniquePush(children[i]);
+			}
+		}
+	}
 
-					// Check if child is not at next level.
-					if (nextLevel.indexOf(child) == -1) {
-						nextLevel.push(child); // Save child at next level.
-						for (var badL = l; badL >= 0; --badL) { // Check child and remove from earlier levels.
-							var badIdx = levels[badL].indexOf(child);
-							if (badIdx != -1)
-								levels[l].splice(badIdx, 1);
-						}
+	return (iterators.fast.queue.length > 0);
+}
 
-					} // endif new child node.
-				} // endfor children.
-			} // endif has children.
-		} // endfor node in current level.
-		++l;
-	} // endwhile has unfinished level.
 
-	return levels;
+function buildLevelSortedHierarchy(rootNode) {
+	var tree = new Structs.Tree(rootNode);
+	var queue = [rootNode];
+	var node, pos;
+	var children, i, child, childPos;
+
+	while (queue.length > 0) {
+		node = queue.splice(0, 1)[0];
+		pos = tree.find(node);
+		children = node.getChildren();
+		for (i = 0; i < children.length; ++i) {
+			child = children[i];
+			childPos = tree.find(child);
+			if (childPos.level <= pos.level) {
+				tree.remove(childPos);
+				tree.insert(pos.level+1, child);
+				if (queue.indexOf(child) == -1)
+					queue.push(child);
+			}
+		}
+	}
+
+	return tree;
 }
 
 
 module.exports = {
 	Port: Port,
 	Node: Node,
-	getTHL: getTreeHierarchyListFrom
+	buildLSH: buildLevelSortedHierarchy,
+	isCircular: isCircular
 };

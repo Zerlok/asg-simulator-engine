@@ -38,7 +38,7 @@ class NodeEditor {
 
 		this.nodes.push(node);
 		++this.cntr;
-		console.log(`Node ${node.name} created successfuly.`);
+		console.log(`Node ${node.name}-${node.id} created successfuly.`);
 		return node;
 	}
 
@@ -120,6 +120,14 @@ class NodeEditor {
 		return true;
 	}
 
+	validate() {
+		var result = Nodes.base.isCircular(this.nodes[0]);
+		if (!result)
+			console.log('All nodes are valid.');
+		else
+			console.warn('Nodes structure has loops!');
+	}
+
 	showNode(idx) {
 		var node = this.getNode(idx);
 		if (node == null)
@@ -143,6 +151,8 @@ class NodeEditor {
 
 	showNodes() {
 		console.log(`Total ${this.nodes.length} nodes:`);
+		this.validate();
+		console.log(`Hierarchy level depth: ${Nodes.base.buildLSH(this.nodes[0]).data.length}`);
 		for (var i in this.nodes) {
 			this.showNode(i);
 		}

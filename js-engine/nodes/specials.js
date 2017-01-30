@@ -239,7 +239,6 @@ nodeFactory.registrate('cmdMove', MoveCmdNode);
 
 
 module.exports = {
-	Node: Base.Node,
 	Root: RootNode,
 	Filter: FilterNode,
 	Manipulator: ManipulatorNode,
@@ -249,5 +248,6 @@ module.exports = {
 	CmdHold: HoldCmdNode,
 	CmdMove: MoveCmdNode,
 	factory: nodeFactory,
-	config: nodesCfg,
+	base: Base,
+	config: nodesCfg
 };

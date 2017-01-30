@@ -4,3 +4,4 @@ syntax: glob
 *.pro.user
 *.txt
 js-engine/node_modules/*
+*_sample*
