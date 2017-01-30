@@ -3,5 +3,5 @@ syntax: glob
 *.zip
 *.pro.user
 *.txt
-js-engine/node_modules/*
+node_modules/*
 *_sample*

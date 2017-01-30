@@ -5,7 +5,7 @@ Nodes.io = require('./nodes/io');
 Nodes.Editor = require('./nodes/editor').Editor;
 
 
-var filename = "./strategy.txt";
+var filename = "./strategies/tmp.txt";
 var neditor = new Nodes.Editor();
 
 
