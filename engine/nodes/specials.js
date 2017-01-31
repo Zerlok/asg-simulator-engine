@@ -3,21 +3,22 @@
 var Funcs = require('../common/functions');
 var Base = require('./base');
 var cfg = require('../config').engine;
-var nodesCfg = cfg.nodes;
 
 
 // --------------------------- Logical Nodes --------------------------- //
 
 class RootNode extends Base.Node {
 	constructor(id, name) {
-		super(id, name, nodesCfg.root.inputs, nodesCfg.root.outputs);
+		super(id, name, cfg.nodes.defaultFields, cfg.nodes.defaultFields);
 	}
 
-	initData() {
-		var keys = Object.keys(this.inputs);
-		for (var i = 0; i < Math.min(arguments.length, keys.length); ++i) {
-			this.inputs[keys[i]].setConstData(arguments[i]);
-		}
+	initData(selfUnits, enemyUnits, roundNum, deals) {
+		this.inputs[cfg.units.name].setConstData({
+				own: selfUnits,
+				enemies: enemyUnits
+		});
+		this.inputs.round.setConstData(roundNum);
+		this.inputs.deals.setConstData(deals);
 	}
 
 	_executeSpecial() {
@@ -29,53 +30,73 @@ class RootNode extends Base.Node {
 
 class FilterNode extends Base.Node {
 	constructor(id, name) {
-		super(id, name, nodesCfg.filter.inputs, nodesCfg.filter.outputs);
+		const sideFilter = {
+			name: "side",
+			options: ["any", cfg.units.self, cfg.units.enemy]
+		};
+		const unitsFilter = ['type', 'hull'];
+
+		super(id, name, [cfg.units.name, sideFilter.name].concat(unitsFilter), [cfg.units.name]);
+		this.sideFilter = sideFilter;
+		this.unitsFilter = unitsFilter;
 	}
 
 	isReady() {
-		var shipsPort = this.inputs[cfg.units.name];
-		if (shipsPort.empty || shipsPort.data == null)
+		var unitsPort = this.inputs[cfg.units.name];
+		if (unitsPort.empty || (unitsPort.data == null))
 			return false;
 
-		for (var name in this.inputs) {
+		for (var name of this.unitsFilter) {
 			var inPort = this.inputs[name];
-			if (!inPort.empty && (name != cfg.units.name))
+			if (!inPort.empty)
 				return true;
 		}
 
 		return false;
 	}
 
-	criterias() {
-		var Criteria = function(fieldName, opName, value) {
+	getCriterias() {
+		var UnitCriteria = function(fieldName, opName, value) {
 			return {
 				field: fieldName,
-				operator: nodesCfg.filter.operators[opName],
+				operator: Funcs.operators[opName],
 				value: value,
 				validate: function(unit) {
 					return this.operator(unit[this.field], this.value);
 				}
 			};
 		};
+		var UnitTypeCriteria = function(opName, value) {
+			return {
+				operator: Funcs.operators[opName],
+				value: cfg.units.hierarchy.indexOf(value),
+				validate: function(unit) {
+					return this.operator(cfg.units.hierarchy.indexOf(unit.type), this.value);
+				}
+			};
+		};
 
 		var lst = [];
-		for (var i in nodesCfg.filter.criterias) {
-			var fieldName = nodesCfg.filter.criterias[i];
-			var data = this.inputs[fieldName].data;
-			var type = typeof data;
+		var data, type, crit;
+		for (var name of this.unitsFilter) {
+			data = this.inputs[name].data;
+			type = typeof data;
 			if (data != null) {
 				if ((type == "number")
-						|| (type == "string")) {
-					lst.push(new Criteria(fieldName, 'eq', data));
+						|| (type == "string")
+						|| (!data.hasOwnProperty("op")
+						|| (!data.hasOwnProperty("value"))))
+					data = {op: 'eq', value: data};
 
-				} else if ((data.op != null)
-							&& nodesCfg.filter.operators.hasOwnProperty(data.op)
-							&& data.hasOwnProperty('value')) {
-					lst.push(new Criteria(fieldName, data.op, data.value));
-
+				if (name == "type") {
+					crit = new UnitTypeCriteria(data.op, data.value);
+				} else if (Funcs.operators.hasOwnProperty(data.op)) {
+					crit = new UnitCriteria(name, data.op, data.value);
 				} else {
-					console.error(`Can't create criteria with parametrs op='${data.op}', value='${data.value}'!`);
+					console.error(`Can't create criteria for unit field '${name}' with parametrs op='${data.op}', value='${data.value}'!`);
 				}
+
+				lst.push(crit);
 			}
 		}
 
@@ -84,70 +105,102 @@ class FilterNode extends Base.Node {
 
 	_executeSpecial() {
 		// TODO: make byPosition criteria be an area (horizontal and vertical ranges).
-		var criterias = this.criterias();
-		this.outputs.ships.data = this.inputs.ships.data.filter(function(unit) {
+		var criterias = this.getCriterias();
+		var filterFunc = function(unit) {
 			for (var i = 0; i < criterias.length; ++i)
 				if (!criterias[i].validate(unit))
 					return null;
 			return unit;
-		});
+		};
+
+		var units = this.outputs[cfg.units.name];
+		units.data = {};
+		units.data[cfg.units.self] = [];
+		units.data[cfg.units.enemy] = [];
+
+		var side = this.inputs[this.sideFilter.name].data;
+		if ((side == null)
+				|| (side == this.sideFilter.options[0])
+				|| (side == this.sideFilter.options[1])) {
+			units.data[cfg.units.self] = this.inputs[cfg.units.name].data[cfg.units.self].filter(filterFunc);
+		}
+		if ((side == null)
+				|| (side == this.sideFilter.options[0])
+				|| (side == this.sideFilter.options[2])) {
+			units.data[cfg.units.enemy] = this.inputs[cfg.units.name].data[cfg.units.enemy].filter(filterFunc);
+		}
 	}
 }
 
 class ManipulatorNode extends Base.Node {
 	constructor(id, name) {
-		super(id, name, nodesCfg.manipulator.inputs, nodesCfg.manipulator.outputs);
+		super(id, name, ['leftSet', 'rightSet', 'operation'], ['resultSet']);
 	}
 
 	_executeSpecial() {
 		var name = this.inputs.operation.data;
-		var op = nodesCfg.manipulator.operations[name];
+		var op = Funcs.unique[name];
 		if (op == null)
-			return console.error(`Undefined operation: ${name}!`);
+			return console.error(`Undefined set operation: ${name}!`);
 
-		this.outputs.ships.data = op(this.inputs.left.data, this.inputs.right.data);
+		this.outputs.resultSet.data = {};
+		this.outputs.resultSet.data[cfg.units.self] = op(this.inputs.leftSet.data[cfg.units.self], this.inputs.rightSet.data[cfg.units.self]);
+		this.outputs.resultSet.data[cfg.units.enemy] = op(this.inputs.leftSet.data[cfg.units.enemy], this.inputs.rightSet.data[cfg.units.enemy]);
 	}
 }
 
 class ConditionalNode extends Base.Node {
 	constructor(id, name) {
-		super(id, name, nodesCfg.conditional.inputs, nodesCfg.conditional.outputs);
+		super(id, name, ['leftValue', 'rightValue', 'operator'], ['resultValue']);
 	}
 
 	_executeSpecial() {
 		var name = this.inputs.operator.data;
-		if (nodesCfg.conditional.operators.hasOwnProperty(name)) {
-			var op = nodesCfg.conditional.operators[name];
-			this.outputs.result.data = op(this.inputs.left.data, this.inputs.right.data);
-		} else {
+		var op = Funcs.operators[name];
+		if (op == null) {
 			return console.error(`Can't use undefined operator '${name}'!`);
 		}
+
+		this.outputs.resultValue.data = op(this.inputs.leftValue.data, this.inputs.rightValue.data);
 	}
 }
 
 class ForkNode extends Base.Node {
 	constructor(id, name) {
-		super(id, name, nodesCfg.fork.inputs, nodesCfg.fork.outputs);
-		this[nodesCfg.fork.trueField] = {};
-		this[nodesCfg.fork.falseField] = {};
-		for (var name of nodesCfg.fork.passing) {
-			this[nodesCfg.fork.trueField][name] = this.outputs[nodesCfg.fork.trueField+'_'+name];
-			this[nodesCfg.fork.falseField][name] = this.outputs[nodesCfg.fork.falseField+'_'+name]
+		const sep = "_";
+		const trueFieldName = "onTrue";
+		const falseFieldName = "onFalse";
+		var inputsNames = ['result'].concat(cfg.nodes.defaultFields);
+		var outputsNames = [];
+		for (var field of inputsNames) {
+			outputsNames.push(trueFieldName+sep+field);
+			outputsNames.push(falseFieldName+sep+field);
+		}
+
+		super(id, name, inputsNames, outputsNames);
+		this.inputsNames = inputsNames;
+		this.trueFieldName = trueFieldName;
+		this.falseFieldName = falseFieldName;
+
+		this[trueFieldName] = {};
+		this[falseFieldName] = {};
+		for (var field of inputsNames) {
+			this[trueFieldName][field] = this.outputs[trueFieldName+sep+field];
+			this[falseFieldName][field] = this.outputs[falseFieldName+sep+field];
 		}
 	}
 
 	getOutput(field) {
 		if (this.inputs.result.data) {
-			return this[nodesCfg.fork.trueField][field];
+			return this[this.trueFieldName][field];
 		} else {
-			return this[nodesCfg.fork.falseField][field];
+			return this[this.falseFieldName][field];
 		}
 	}
 
 	_executeSpecial() {
 		this.refreshOutputs();
-		for (var i in nodesCfg.fork.passing) {
-			var name = nodesCfg.fork.passing[i];
+		for (var name of inputsNames) {
 			this.getOutput(name).data = this.inputs[name].data;
 		}
 	}
@@ -158,7 +211,7 @@ class ForkNode extends Base.Node {
 
 class FireCmdNode extends Base.Node {
 	constructor(id, name) {
-		super(id, name, nodesCfg.cmdFire.inputs, nodesCfg.cmdFire.outputs);
+		super(id, name, [cfg.units.name], []);
 	}
 
 	setValue(field, value) {
@@ -167,22 +220,21 @@ class FireCmdNode extends Base.Node {
 	}
 
 	_executeSpecial() {
-		// TODO: Check if units are self.
-		// TODO: Check if targets are enemies.
-		// TODO: Count total fire points.
-		// TODO: Choose damaging targets.
-		// TODO: Spread fire points between targets.
-
-		var totalDmg = 0;
-		this.inputs.own.data.forEach(function(unit){ totalDmg += unit.fire(); });
-
-		var len = this.inputs.enemies.data.length;
+		var targets = this.inputs.enemies.data[cfg.units.enemy];
+		var len = tarrgets.length;
 		if (len == 0)
 			return;
 
+		var totalDmg = 0;
+		var ownUnits = this.inputs.data[cfg.units.self];
+		for (var i = 0; i < ownUnits.length; ++i) {
+			totalDmg += ownUnits[i].fire();
+		}
+
+		var target, dmg;
 		while (totalDmg > 0) {
-			var target = this.inputs.enemies.data[Funcs.rand(0, len-1)];
-			var dmg = Funcs.rand(10, totalDmg/2);
+			target = targets[Funcs.rand(0, len-1)];
+			dmg = Funcs.rand(1, totalDmg/2);
 			target.receiveDamage(dmg);
 			totalDmg -= dmg;
 		}
@@ -191,7 +243,7 @@ class FireCmdNode extends Base.Node {
 
 class HoldCmdNode extends Base.Node {
 	constructor(id, name) {
-		super(id, name, nodesCfg.cmdHold.inputs, nodesCfg.cmdHold.outputs);
+		super(id, name, [cfg.units.name], []);
 	}
 
 	setValue(field, value) {
@@ -200,18 +252,16 @@ class HoldCmdNode extends Base.Node {
 	}
 
 	_executeSpecial() {
-		// TODO: Check if units are self.
-		// TODO: For each own unit call onHold()
-
-		for (var i = 0; i < this.inputs.own.data.length; ++i) {
-			this.inputs.own.data[i].restoreShields();
+		var ownUnits = this.inputs.own.data[cfg.units.self];
+		for (var i = 0; i < ownUnits.length; ++i) {
+			ownUnits[i].restoreShields();
 		}
 	}
 }
 
 class MoveCmdNode extends Base.Node {
 	constructor(id, name) {
-		super(id, name, nodesCfg.cmdMove.inputs, nodesCfg.cmdMove.outputs);
+		super(id, name, [cfg.units.name], []);
 	}
 
 	setValue(field, value) {
@@ -220,8 +270,25 @@ class MoveCmdNode extends Base.Node {
 	}
 
 	_executeSpecial() {
-		// TODO: Check if units are self.
-		// TODO: For each own unit move by offset or to position.
+
+	}
+}
+
+
+// --------------------------- Factory Building --------------------------- //
+
+class DealNode extends Base.Node {
+	constructor(id, name) {
+		super(id, name, ['deal'], []);
+	}
+
+	setValue(field, value) {
+		console.error(`${this.name} node has not constant input values!`);
+		return this;
+	}
+
+	_executeSpecial() {
+
 	}
 }
 
@@ -238,6 +305,7 @@ nodeFactory.registrate('fork', ForkNode);
 nodeFactory.registrate('cmdFire', FireCmdNode);
 nodeFactory.registrate('cmdHold', HoldCmdNode);
 nodeFactory.registrate('cmdMove', MoveCmdNode);
+nodeFactory.registrate('dealer', DealNode);
 
 
 module.exports = {
@@ -250,6 +318,8 @@ module.exports = {
 	CmdFire: FireCmdNode,
 	CmdHold: HoldCmdNode,
 	CmdMove: MoveCmdNode,
+
+	Dealer: DealNode,
 
 	factory: nodeFactory
 };

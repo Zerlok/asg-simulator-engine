@@ -86,7 +86,7 @@ module.exports = {
 	countable: countable,
 	rand: rand,
 	operators: operators,
-	sets: {
+	unique: {
 		intersection: intersection,
 		union: union,
 		difference: difference

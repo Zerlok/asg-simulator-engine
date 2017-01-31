@@ -5,6 +5,7 @@ const maxRounds = cfg.battle.maxRounds;
 
 var Units = require('../units');
 var Nodes = require('../nodes');
+var Logger = require('./logger');
 
 
 class Player {
@@ -80,6 +81,7 @@ function simulateBattle(attacker, defender) {
 		return console.error(`Defender '${defender.name}' is invalid! Exiting battle simulation ...`);
 	}
 
+	var battle = new Logger();
 	var active, inactive;
 	var players = [attacker, defender];
 	var idx = 0;
@@ -87,38 +89,36 @@ function simulateBattle(attacker, defender) {
 	var l, i, levels;
 	var node, rootNode;
 
+	battle.clear();
+
 	// for (var round = 0; round < 2; ++i) {
 	for (var round = 0; round < maxRounds; ++round) {
 		active = players[(idx%2)];
 		inactive = players[1 - (idx%2)];
-
 		active.updateState();
 		if (!active.isReady())
 			break;
 
 		levels = active.strategy;
 		rootNode = levels[0][0];
-		// console.log(`${round}: ${active.name} turn ...`);
+		battle.logRound(round, active);
 		rootNode.initData(active.units.current, inactive.units.current, round/2, active.state);
 
 		for (l = 0; l < levels.length; ++l) {
 			for (i = 0; i < levels[l].length; ++i) {
 				node = levels[l][i];
 				if (node.isReady()) {
-					// console.log(`${node.name}-${node.id} execution ...`);
 					node.execute();
-					// node.pushData();
-					// TODO: Save node execution results into special BattleLogger.
+					battle.logNodeExec(node);
 					node.refresh();
 				}
 			}
 		}
 
-		// Change players (attacker and defender) for next round step.
 		++idx;
 	}
 
-	// TODO: Create battle log file and save it.
+	battle.save("./logs/b"+battle.now());
 }
 
 

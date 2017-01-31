@@ -22,8 +22,19 @@ const titles = {
 		results: ["won", "lost", "draw"]
 	},
 
+	player: {
+		deals: ["draw", "surrender"]
+	},
+
 	units: {
 		name: "ships",
+		types: [
+			'fighter',
+			'hedgehopper',
+			'cruiser',
+			'battleship',
+			'demolisher'
+		],
 		fields: [
 			'type',
 			'hull',
@@ -31,20 +42,31 @@ const titles = {
 			'shieldsMax',
 			'shieldsRegen',
 			'damage',
-			'score'
-		]
+			'score',
+			'order'
+		],
+		orders: ["fire", "hold", "move"],
+		defaultOrder: "fire"
 	},
 
 	nodes: {
 		types: [
+			'logical',
+			'command',
+			'deal'
+		],
+		names: [
 			'root',
 			'filter',
 			'manipulator',
 			'conditional',
 			'fork',
+
 			'cmdFire',
 			'cmdHold',
 			'cmdMove',
+
+			'dealer'
 		]
 	}
 };
@@ -62,25 +84,8 @@ const battle = {
 		started: titles.battle.states[1],
 		finished: titles.battle.states[2]
 	},
-	results: {
-		names: titles.battle.results,
-		win: {
-			name: titles.battle.results[0],
-			short: "+",
-			message: function(att, def) { return att.name+" won the batlle with "+def.name; }
-		},
-		loose: {
-			names: titles.battle.results[1],
-			short: "-",
-			message: function(att, def) { return att.name+" lost the batlle with "+def.name; }
-		},
-		draw: {
-			names: titles.battle.results[2],
-			short: "*",
-			message: function(att, def) { return "the battle between "+att.name+" and "+def.name+" ended in a draw"; }
-		}
-	},
-	maxRounds: 256
+	results: titles.battle.results,
+	maxRounds: 8
 };
 
 
@@ -90,14 +95,9 @@ var units = {
 	name: titles.units.name,
 	self: titles.battle.side.self,
 	enemy: titles.battle.side.enemy,
+	fields: titles.units.fields,
+	hierarchy: titles.units.types,
 
-	hierarchy: [
-		'fighter',
-		'hedgehopper',
-		'cruiser',
-		'battleship',
-		'demolisher'
-	],
 	types: {
 		fighter: {
 			type: "fighter",
@@ -106,7 +106,8 @@ var units = {
 			shieldsMax: 100,
 			shieldsRegen: 30,
 			damage: 40,
-			score: 270
+			score: 270,
+			order: titles.units.defaultOrder
 		},
 		hedgehopper: {
 			type: "hedgehopper",
@@ -115,7 +116,8 @@ var units = {
 			shieldsMax: 400,
 			shieldsRegen: 100,
 			damage: 160,
-			score: 290
+			score: 290,
+			order: titles.units.defaultOrder
 		},
 		cruiser: {
 			type: "cruiser",
@@ -125,6 +127,7 @@ var units = {
 			shieldsRegen: 200,
 			damage: 500,
 			score: 330,
+			order: titles.units.defaultOrder
 		},
 		battleship: {
 			type: "battleship",
@@ -133,7 +136,8 @@ var units = {
 			shieldsMax: 2100,
 			shieldsRegen: 320,
 			damage: 1100,
-			score: 400
+			score: 400,
+			order: titles.units.defaultOrder
 		},
 		demolisher: {
 			type: "demolisher",
@@ -142,11 +146,9 @@ var units = {
 			shieldsMax: 3800,
 			shieldsRegen: 400,
 			damage: 3000,
-			score: 560
+			score: 560,
+			order: titles.units.defaultOrder
 		}
-	},
-	fields: {
-		names: titles.units.fields,
 	}
 };
 
@@ -155,66 +157,14 @@ var units = {
 
 var nodes = {
 	main: titles.nodes.types[0],
+	unitsField: units.name,
+	defaultFields: [
+		units.name,
+		"round",
+		"deals"
+	],
 	types: titles.nodes.types,
-	root: {
-		inputs: [units.self, units.enemy, 'round'],
-		outputs: [units.self, units.enemy, 'round']
-	}
-};
-
-// Specials ...
-nodes['filter'] = {
-	inputs: [titles.units.name],
-	outputs: [titles.units.name],
-	criterias: ['type', 'hull', 'position'],
-	operators: Funcs.operators
-};
-for (var crt of nodes.filter.criterias) {
-	nodes.filter.inputs.push(crt);
-}
-
-nodes['manipulator'] = {
-	inputs: ['left', 'right', 'operation'],
-	outputs: ['ships'],
-	operations: {
-		names: ['intersection', 'union', 'difference'],
-		intersection: Funcs.sets.intersection,
-		union: Funcs.sets.union,
-		difference: Funcs.sets.difference
-	}
-};
-
-nodes['conditional'] = {
-	inputs: ['left', 'right', 'operator'],
-	outputs: ['result'],
-	operators: Funcs.operators
-};
-
-nodes['fork'] = {
-	inputs: [units.self, units.enemy, 'result'],
-	outputs: [],
-	trueField: 'onTrue',
-	falseField: 'onFalse',
-	passing: [units.self, units.enemy, 'result']
-};
-for (var name of nodes.fork.passing) {
-	nodes.fork.outputs.push(nodes.fork.trueField+'_'+name);
-	nodes.fork.outputs.push(nodes.fork.falseField+'_'+name);
-}
-
-nodes['cmdFire'] = {
-	inputs: [units.self, units.enemy],
-	outputs: []
-};
-
-nodes['cmdHold'] = {
-	inputs: [units.self],
-	outputs: []
-};
-
-nodes['cmdMove'] = {
-	inputs: [units.self, 'offset', 'position'],
-	outputs: []
+	names: titles.nodes.names
 };
 
 

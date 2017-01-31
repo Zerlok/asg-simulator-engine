@@ -1,6 +1,7 @@
 "use strict"
 
 var Structs = require('../common/structs');
+var Units = require('../units');
 var nodesCfg = require('../config').engine.nodes;
 
 
@@ -84,7 +85,6 @@ class Node {
 			var field = outFields[i];
 			this.outputs[field] = new Port(i, field, this);
 		}
-
 		// console.log(`<Node:${id}:${name} (ins: [${inFields}], outs: [${outFields}])> created.`);
 	}
 
@@ -155,11 +155,30 @@ class Node {
 
 	getValues() {
 		var lst = [];
+		var input;
 		for (var name in this.inputs) {
-			var data = this.inputs[name].data;
-			if (data == null)
-				data = 0;
-			lst.push(data);
+			input = this.inputs[name].data;
+			if ((name != nodesCfg.unitsField)
+			 		|| (input == null)) {
+				lst.push(input);
+			} else {
+				lst.push(Units.io.toJson(input));
+			}
+		}
+		return lst;
+	}
+
+	getResults() {
+		var lst = [];
+		var output;
+		for (var name in this.outputs) {
+			output = this.outputs[name].data;
+			if ((name != nodesCfg.unitsField)
+					|| (output == null)) {
+				lst.push(output);
+			} else {
+				lst.push(Units.io.toJson(output));
+			}
 		}
 		return lst;
 	}
@@ -247,9 +266,7 @@ class Node {
 		if (!this.isReady())
 			return console.error(`Node ${this.name} is not ready for executeion!`);
 
-		// this.refreshOutputs();
 		this._executeSpecial();
-		// this.refreshInputs();
 		this.pushData();
 	}
 

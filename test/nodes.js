@@ -25,12 +25,12 @@ describe("Nodes custom executions:", function() {
 		var node = new Engine.nodes.Root(0, 'node');
 		expect(node.isReady()).to.be.false;
 
-		node.initData(units.attacker, units.defender, 4);
+		node.initData(units.attacker, units.defender, 4, "nothing");
 		expect(node.isReady()).to.be.true;
 
 		node.execute();
-		expect(node.outputs.own.data).to.eql(units.attacker);
-		expect(node.outputs.enemies.data).to.eql(units.attacker);
+		expect(node.outputs.ships.data.own).to.eql(units.attacker);
+		expect(node.outputs.ships.data.enemies).to.eql(units.attacker);
 		expect(node.outputs.round.data).to.equal(4);
 	});
 
