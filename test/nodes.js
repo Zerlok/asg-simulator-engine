@@ -49,8 +49,8 @@ describe("Nodes custom executions:", function() {
 
 		node = new Engine.nodes.Filter(0, 'node');
 		node.inputs.ships.setConstData(units.defender);
-		node.inputs.health.setConstData({'op': 'lt', 'value': 200});
-		filtered = units.defender.filter(function(x){ if (x.health < 200) return x; });
+		node.inputs.hull.setConstData({'op': 'lt', 'value': 200});
+		filtered = units.defender.filter(function(x){ if (x.hull < 200) return x; });
 		node.execute();
 		expect(node.outputs.ships.data).to.eql(filtered);
 	});
@@ -150,21 +150,21 @@ describe("Strategy editing and execution:", function() {
 		node = neditor.createNode('filter').setValue('type', 'fighter');
 		expect(node.name).to.equal('filter');
 		expect(node.inputs.type.data).to.equal('fighter');
-		expect(node.inputs.health.data).to.be.null;
+		expect(node.inputs.hull.data).to.be.null;
 
 		node = neditor.createNode('filter').setValue('type', 'fighter');
 		expect(node.name).to.equal('filter');
 		expect(node.inputs.type.data).to.equal('fighter');
-		expect(node.inputs.health.data).to.be.null;
+		expect(node.inputs.hull.data).to.be.null;
 
 		node = neditor.createNode('cmdFire');
 		expect(node.name).to.equal('cmdFire');
 		expect(node.inputs.type).to.be.undefined;
 
-		node = neditor.createNode('filter').setValue('health', {'op': 'le', 'value': 40});
+		node = neditor.createNode('filter').setValue('hull', {'op': 'le', 'value': 40});
 		expect(node.name).to.equal('filter');
 		expect(node.inputs.type.data).to.be.null;
-		expect(node.inputs.health.data).to.eql({'op': 'le', 'value': 40});
+		expect(node.inputs.hull.data).to.eql({'op': 'le', 'value': 40});
 
 		node = neditor.createNode('cmdHold');
 		expect(node.name).to.equal('cmdHold');
@@ -172,7 +172,7 @@ describe("Strategy editing and execution:", function() {
 		node = neditor.createNode('filter').setValue('type', 'demolisher');
 		expect(node.name).to.equal('filter');
 		expect(node.inputs.type.data).to.equal('demolisher');
-		expect(node.inputs.health.data).to.be.null;
+		expect(node.inputs.hull.data).to.be.null;
 
 		neditor.createNode('filter').setValue('type', 'demolisher');
 		neditor.createNode('conditional').setValue('operator', 'gt');

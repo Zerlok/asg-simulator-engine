@@ -6,6 +6,7 @@ var unitsCfg = require('../config').engine.units;
 
 class Unit {
 	constructor(type) {
+		this.type = type;
 		for (var i in unitsCfg.fields.names) {
 			var field = unitsCfg.fields.names[i];
 			this[field] = unitsCfg.types[type][field];
@@ -13,23 +14,25 @@ class Unit {
 	}
 
 	isAlive() {
-		return (this.health > 0);
+		return (this.hull > 0);
 	}
 
 	fire() {
-		return Funcs.rand(0, 100) * 10;
+		var offset = this.damage/20;
+		return Funcs.rand(this.damage-offset, this.damage+offset);
 	}
 
 	receiveDamage(dmg) {
 		this.shields -= dmg;
 		if (this.shields < 0) {
-			this.health += this.shields;
+			this.hull += this.shields;
 			this.shields = 0;
 		}
 	}
 
 	restoreShields() {
-		this.shields += 100;
+		if (this.shields < this.shieldsMax)
+			this.shields += this.shieldsRegen;
 	}
 }
 

@@ -13,6 +13,8 @@ class Player {
 		this.units = {initial: units, current: units.slice() };
 		this.strategy = nodes;
 		this.score = 0;
+		for (var i = 0; i < units.length; ++ i)
+			this.score += units[i].score;
 		// this.units = { initial: Units.io.fromJson(units), current: [] };
 		// this.strategy = Nodes.io.fromJson(nodes);
 		// this.state = cfg.battle.defaultState;
@@ -61,7 +63,7 @@ class Player {
 		for (var i = 0; i < this.units.current.length; ++i) {
 			unit = this.units.current[i];
 			if (!unit.isAlive()) {
-				this.score += unit.score;
+				this.score -= unit.score;
 			} else {
 				lst.push(unit);
 			}
@@ -96,14 +98,14 @@ function simulateBattle(attacker, defender) {
 
 		levels = active.strategy;
 		rootNode = levels[0][0];
-		console.log(`${round}: ${active.name} turn ...`);
+		// console.log(`${round}: ${active.name} turn ...`);
 		rootNode.initData(active.units.current, inactive.units.current, round/2, active.state);
 
 		for (l = 0; l < levels.length; ++l) {
 			for (i = 0; i < levels[l].length; ++i) {
 				node = levels[l][i];
 				if (node.isReady()) {
-					console.log(`${node.name}-${node.id} execution ...`);
+					// console.log(`${node.name}-${node.id} execution ...`);
 					node.execute();
 					// node.pushData();
 					// TODO: Save node execution results into special BattleLogger.

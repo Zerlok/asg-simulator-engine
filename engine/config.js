@@ -26,15 +26,11 @@ const titles = {
 		name: "ships",
 		fields: [
 			'type',
-			'health',
+			'hull',
 			'shields',
-			'shieldRegen',
-			'accuracy',
-			'dodging',
-			'position',
-			'speed',
-			'fuel',
-			'fuelWaste',
+			'shieldsMax',
+			'shieldsRegen',
+			'damage',
 			'score'
 		]
 	},
@@ -84,7 +80,7 @@ const battle = {
 			message: function(att, def) { return "the battle between "+att.name+" and "+def.name+" ended in a draw"; }
 		}
 	},
-	maxRounds: 1024
+	maxRounds: 256
 };
 
 
@@ -102,62 +98,57 @@ var units = {
 		'battleship',
 		'demolisher'
 	],
-	types: {}, // Will be filled below.
+	types: {
+		fighter: {
+			type: "fighter",
+			hull: 100,
+			shields: 30,
+			shieldsMax: 100,
+			shieldsRegen: 30,
+			damage: 40,
+			score: 270
+		},
+		hedgehopper: {
+			type: "hedgehopper",
+			hull: 500,
+			shields: 100,
+			shieldsMax: 400,
+			shieldsRegen: 100,
+			damage: 160,
+			score: 290
+		},
+		cruiser: {
+			type: "cruiser",
+			hull: 1200,
+			shields: 200,
+			shieldsMax: 1000,
+			shieldsRegen: 200,
+			damage: 500,
+			score: 330,
+		},
+		battleship: {
+			type: "battleship",
+			hull: 3000,
+			shields: 320,
+			shieldsMax: 2100,
+			shieldsRegen: 320,
+			damage: 1100,
+			score: 400
+		},
+		demolisher: {
+			type: "demolisher",
+			hull: 6000,
+			shields: 400,
+			shieldsMax: 3800,
+			shieldsRegen: 400,
+			damage: 3000,
+			score: 560
+		}
+	},
 	fields: {
 		names: titles.units.fields,
-
-		type: {},
-		health: {		minVal: 50,						maxVal: 10000000 },
-		shields: {		minVal: 50,						maxVal: 10000 },
-		shieldRegen: {	minVal: 1,						maxVal: 300 },
-		accuracy: {		minVal: 10.0,					maxVal: 98.0 },
-		dodging: {		minVal: 5.0,					maxVal: 98.0 },
-		position: {},
-		speed: {		minVal: 1,						maxVal: 2*Math.sqrt(Math.pow(width, 2) + Math.pow(height, 2))/(width+height) },
-		fuel: {			minVal: battle.maxRounds/2,		maxVal: battle.maxRounds*3/4 },
-		fuelWaste: {	minVal: 1,						maxVal: 1 },
-		score: {		minVal: 1000,					maxVal: 10000000 },
-
-		generators: {} // Will be filled below.
-	},
-	scoreFields: ['health', 'shields', 'shieldRegen', 'speed', 'fuel'],
-};
-
-// Create generator functions (field value setters by unit type).
-function clampUF(name, value) { return Funcs.clamp(units.fields[name].minVal, units.fields[name].maxVal, value); }
-units.fields.generators = {
-	type: function(n) { return 			units.hierarchy[n];											},
-	health: function(n) { return		clampUF('health',		20*Math.pow(5, n+1)/(n+1));			},
-	shields: function(n) { return		clampUF('shields',		(n+10)*Math.pow(8, n+1));			},
-	shieldRegen: function(n) { return	clampUF('shieldRegen',	10*Math.pow(10, (n+1)/10));			},
-	accuracy: function(n) { return		clampUF('accuracy',		(120 - (40/Math.pow(n+1, 2))));		},
-	dodging: function(n) { return		clampUF('dodging',		80/(n+1));							},
-	speed: function(n) { return			clampUF('speed',		16/(n+2));							},
-	fuel: function(n) { return			clampUF('fuel',			25*Math.pow(n+1, 2));				},
-	fuelWaste: function(n) { return		clampUF('fuelWaste',	(n+1)/2*Math.pow(n, 2));			},
-};
-units.fields.generators['score'] = function(n) {
-	const cntr = units.scoreFields.length;
-	var sum = 0;
-	for (var i in units.scoreFields) {
-		var name = units.scoreFields[i];
-		sum += units.fields.generators[name](n);
 	}
-	return (cntr * Math.pow(sum, 2/cntr));
-}
-
-// Create unit prototype for every type (using generators).
-for (var i in units.hierarchy) {
-	var type = units.hierarchy[i];
-	var obj = {};
-	for (var j = 0; j < units.fields.names.length; ++j) {
-		var name = units.fields.names[j];
-		var fieldGen = units.fields.generators[name];
-		if (fieldGen)
-			obj[name] = fieldGen(i);
-	}
-	units.types[type] = obj;
-}
+};
 
 
 // ------------------------------ NODES CONFIG ------------------------------ //
@@ -175,7 +166,7 @@ var nodes = {
 nodes['filter'] = {
 	inputs: [titles.units.name],
 	outputs: [titles.units.name],
-	criterias: ['type', 'health', 'position'],
+	criterias: ['type', 'hull', 'position'],
 	operators: Funcs.operators
 };
 for (var crt of nodes.filter.criterias) {

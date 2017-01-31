@@ -167,7 +167,6 @@ class FireCmdNode extends Base.Node {
 	}
 
 	_executeSpecial() {
-		console.log(`Order: ${this.inputs.own.data.length} to shoot to ${this.inputs.enemies.data.length}.`);
 		// TODO: Check if units are self.
 		// TODO: Check if targets are enemies.
 		// TODO: Count total fire points.
@@ -201,7 +200,6 @@ class HoldCmdNode extends Base.Node {
 	}
 
 	_executeSpecial() {
-		console.log(`Order: ${this.inputs.own.data.length} to hold their positions.`);
 		// TODO: Check if units are self.
 		// TODO: For each own unit call onHold()
 
@@ -222,7 +220,6 @@ class MoveCmdNode extends Base.Node {
 	}
 
 	_executeSpecial() {
-		console.log(`Order: ${this.inputs.own.data} to fly to ${this.inputs.position}.`);
 		// TODO: Check if units are self.
 		// TODO: For each own unit move by offset or to position.
 	}

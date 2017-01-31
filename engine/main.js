@@ -16,7 +16,7 @@ function createStrategy(filename) {
 	ed.link(1, 'ships', 3, 'own');
 	ed.link(2, 'ships', 3, 'enemies');
 
-	ed.createNode('filter').setValue('health', {'op': 'le', 'value': 40});
+	ed.createNode('filter').setValue('hull', {'op': 'le', 'value': 40});
 	ed.createNode('cmdHold');
 	ed.link(0, 'own', 4, 'ships');
 	ed.link(4, 'ships', 5, 'own');

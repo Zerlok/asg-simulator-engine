@@ -24,8 +24,8 @@ app.get('/', function (request, response) {
 
 
 app.get('/battle/test', function(request, response) {
-	var attUnits = Units.builder.total(Funcs.rand(80, 120));
-	var defUnits = Units.builder.total(Funcs.rand(80, 120));
+	var attUnits = Units.builder.total(Funcs.rand(256, 512));
+	var defUnits = Units.builder.total(Funcs.rand(256, 512));
 
 	var attNodes = ed.load("./strategies/tmp.txt");
 	var defNodes = ed.load("./strategies/tmp.txt");
