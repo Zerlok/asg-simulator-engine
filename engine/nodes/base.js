@@ -2,7 +2,7 @@
 
 var Structs = require('../common/structs');
 var Units = require('../units');
-var nodesCfg = require('../config').engine.nodes;
+var cfg = require('../config').engine;
 
 
 class Port {
@@ -71,9 +71,10 @@ class Port {
 
 
 class Node {
- 	constructor(id, name, inFields, outFields) {
+ 	constructor(id, name, type, inFields, outFields) {
 		this.id = id;
 		this.name = name;
+		this.type = type;
 		this.inputs = {};
 		this.outputs = {};
 
@@ -158,11 +159,12 @@ class Node {
 		var input;
 		for (var name in this.inputs) {
 			input = this.inputs[name].data;
-			if ((name != nodesCfg.unitsField)
-			 		|| (input == null)) {
-				lst.push(input);
+			if ((input == null)
+					|| (!input.hasOwnProperty(cfg.units.self)
+						&& !input.hasOwnProperty(cfg.units.enemy))) {
+				lst.push(input || "none");
 			} else {
-				lst.push(Units.io.toJson(input));
+				lst.push(`${input[cfg.units.self].length} + ${input[cfg.units.enemy].length}`);
 			}
 		}
 		return lst;
@@ -173,11 +175,12 @@ class Node {
 		var output;
 		for (var name in this.outputs) {
 			output = this.outputs[name].data;
-			if ((name != nodesCfg.unitsField)
-					|| (output == null)) {
-				lst.push(output);
+			if ((output == null)
+					|| (!output.hasOwnProperty(cfg.units.self)
+						&& !output.hasOwnProperty(cfg.units.enemy))) {
+				lst.push(output || "none");
 			} else {
-				lst.push(Units.io.toJson(output));
+				lst.push(`${output[cfg.units.self].length} + ${output[cfg.units.enemy].length}`);
 			}
 		}
 		return lst;
@@ -338,5 +341,5 @@ module.exports = {
 	Node: Node,
 	isCircular: hasCircularLinks,
 	buildLST: buildLevelSortedTree,
-	config: nodesCfg
+	config: cfg.nodes
 };

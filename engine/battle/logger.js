@@ -3,6 +3,7 @@
 var fs = require('fs');
 var Units = require('../units');
 var Nodes = require('../nodes');
+var cfg = require('../config').engine;
 
 
 class Logger {
@@ -37,17 +38,15 @@ class Logger {
 
 	logRound(num, player) {
 		// this.rows.push({
-		// 	at: this.now(),
 		// 	level: "info",
 		// 	name: `round-${num}-${player.name}`,
 		// 	params: {}
 		// });
-		this.rows.push(`[${this.now()}] [INFO] [round-${num}-${player.name}]`);
+		this.rows.push(`[INFO] [round-${num}-${player.name}]`);
 	}
 
 	logNodeExec(node) {
 		// this.rows.push({
-		// 	at: this.now(),
 		// 	level: "debug",
 		// 	name: `node-exec-${node.name}-${node.id}`,
 		// 	params: {
@@ -59,12 +58,11 @@ class Logger {
 			inputs: node.getValues(),
 			outputs: node.getResults()
 		};
-		this.rows.push(`[${this.now()}] [DEBUG] [node-exec-${node.name}-${node.id}] : ${JSON.stringify(params)}`);
+		this.rows.push(`[DEBUG] [exec-${node.name}-${node.id}] : ${JSON.stringify(params)}`);
 	}
 
-	logShipCmd(name, own, enemies) {
+	logShipCmd(node) {
 		// this.rows.push({
-		// 	at: this.now(),
 		// 	level: "info",
 		// 	name: `ship-cmd-${name}`,
 		// 	params: {
@@ -72,7 +70,10 @@ class Logger {
 		// 		enemies: Units.io.toJson(enemies)
 		// 	}
 		// });
-		this.rows.push(`[${this.now()}] [INFO] [ship-cmd-${name}] : ${Units.io.toJson(own)} ${Units.io.toJson(enemies)}`);
+		var units = node.getValues()[0];
+		var self =	units[cfg.units.self];
+		var enemy = units[cfg.units.enemy];
+		this.rows.push(`[INFO] [order-${node.name}] : ${Units.io.toJson(self)} ${Units.io.toJson(enemy)}`);
 	}
 }
 

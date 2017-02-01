@@ -12,7 +12,7 @@ function fromJson(text) {
 
 	for (var i in data.nodes) {
 		var row = data.nodes[i];
-		var node = nodeFactory.create(row.name, i, row.name);
+		var node = nodeFactory.create(row.name, i);
 		for (var f in row.ins) {
 			var field = row.ins[f];
 			node.inputs[field.name].setConstData(field.data);

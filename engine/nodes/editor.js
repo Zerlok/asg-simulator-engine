@@ -32,13 +32,13 @@ class Editor {
 	}
 
 	createNode(name) {
-		var args = [this.cntr, name];
-		for (var i = 1; i < arguments.length; ++i)
-			args.push(arguments[i]);
+		var args = [this.cntr].concat(arguments);
+		// for (var i = 1; i < arguments.length; ++i)
+			// args.push(arguments[i]);
 
 		var node = Nodes.factory.createArgs(name, args);
 		if (node == null)
-			return console.error(`Failed to create a node '${name}' with arguments: [${arguments}]!`);
+			return console.error(`Failed to create a node '${name}' with arguments: [${args}]!`);
 
 		this.nodes.push(node);
 		++this.cntr;

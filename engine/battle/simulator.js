@@ -16,9 +16,6 @@ class Player {
 		this.score = 0;
 		for (var i = 0; i < units.length; ++ i)
 			this.score += units[i].score;
-		// this.units = { initial: Units.io.fromJson(units), current: [] };
-		// this.strategy = Nodes.io.fromJson(nodes);
-		// this.state = cfg.battle.defaultState;
 	}
 
 	isReady() {
@@ -27,11 +24,14 @@ class Player {
 
 	findRoot() {
 		var rootNode = null;
+		var node;
 		for (var i in this.strategy) {
-			var node = this.strategy[i];
+			node = this.strategy[i];
 			if (node.name == cfg.nodes.main) {
 				rootNode = node;
 				break;
+			} else {
+				console.log(`${node.name} found instead of ${cfg.nodes.main}.`);
 			}
 		}
 
@@ -51,6 +51,11 @@ class Player {
 		var rootNode = this.findRoot();
 		if (rootNode == null) {
 			console.error(`'${this.name}' player strategy doesn't has main node!`);
+			return false;
+		}
+
+		if (Nodes.base.isCircular(rootNode)) {
+			console.error(`'${this.name}' player strategy has loops!`);
 			return false;
 		}
 
@@ -109,7 +114,9 @@ function simulateBattle(attacker, defender) {
 				node = levels[l][i];
 				if (node.isReady()) {
 					node.execute();
-					battle.logNodeExec(node);
+					if (node.type == cfg.nodes.types[2])
+						battle.logShipCmd(node);
+
 					node.refresh();
 				}
 			}

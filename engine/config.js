@@ -51,6 +51,7 @@ const titles = {
 
 	nodes: {
 		types: [
+			'root',
 			'logical',
 			'command',
 			'deal'
@@ -156,7 +157,7 @@ var units = {
 // ------------------------------ NODES CONFIG ------------------------------ //
 
 var nodes = {
-	main: titles.nodes.types[0],
+	main: titles.nodes.names[0],
 	unitsField: units.name,
 	defaultFields: [
 		units.name,

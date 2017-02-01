@@ -290,7 +290,7 @@ describe("Strategy editing and execution:", function() {
 		expect(Engine.nodes.base.isCircular(nodes[0])).to.be.false;
 
 		// Check custom graphs.
-		var vertex = function() { return new Engine.nodes.base.Node(0, 'node', ['foo'], ['bar']); };
+		var vertex = function() { return new Engine.nodes.base.Node(0, 'vertex', 'vertex', ['foo'], ['bar']); };
 		var N = 20;
 		var graph = [vertex()];
 		for (var i = 0; i < N; ++i) {

@@ -8,8 +8,8 @@ var cfg = require('../config').engine;
 // --------------------------- Logical Nodes --------------------------- //
 
 class RootNode extends Base.Node {
-	constructor(id, name) {
-		super(id, name, cfg.nodes.defaultFields, cfg.nodes.defaultFields);
+	constructor(id) {
+		super(id, cfg.nodes.names[0], cfg.nodes.types[0], cfg.nodes.defaultFields, cfg.nodes.defaultFields);
 	}
 
 	initData(selfUnits, enemyUnits, roundNum) {
@@ -29,14 +29,14 @@ class RootNode extends Base.Node {
 }
 
 class FilterNode extends Base.Node {
-	constructor(id, name) {
+	constructor(id) {
 		const sideFilter = {
 			name: "side",
 			options: ["any", cfg.units.self, cfg.units.enemy]
 		};
 		const unitsFilter = ['type', 'hull'];
 
-		super(id, name, [cfg.units.name, sideFilter.name].concat(unitsFilter), [cfg.units.name]);
+		super(id, cfg.nodes.names[1], cfg.nodes.types[1], [cfg.units.name, sideFilter.name].concat(unitsFilter), [cfg.units.name]);
 		this.sideFilter = sideFilter;
 		this.unitsFilter = unitsFilter;
 	}
@@ -133,8 +133,8 @@ class FilterNode extends Base.Node {
 }
 
 class ManipulatorNode extends Base.Node {
-	constructor(id, name) {
-		super(id, name, ['leftSet', 'rightSet', 'operation'], ['resultSet']);
+	constructor(id) {
+		super(id, cfg.nodes.names[2], cfg.nodes.types[1], ['leftSet', 'rightSet', 'operation'], ['resultSet']);
 	}
 
 	_executeSpecial() {
@@ -150,8 +150,8 @@ class ManipulatorNode extends Base.Node {
 }
 
 class ConditionalNode extends Base.Node {
-	constructor(id, name) {
-		super(id, name, ['leftValue', 'rightValue', 'operator'], ['resultValue']);
+	constructor(id) {
+		super(id, cfg.nodes.names[3], cfg.nodes.types[1], ['leftValue', 'rightValue', 'operator'], ['resultValue']);
 	}
 
 	_executeSpecial() {
@@ -166,7 +166,7 @@ class ConditionalNode extends Base.Node {
 }
 
 class ForkNode extends Base.Node {
-	constructor(id, name) {
+	constructor(id) {
 		const sep = "_";
 		const trueFieldName = "onTrue";
 		const falseFieldName = "onFalse";
@@ -177,7 +177,7 @@ class ForkNode extends Base.Node {
 			outputsNames.push(falseFieldName+sep+field);
 		}
 
-		super(id, name, inputsNames, outputsNames);
+		super(id, cfg.nodes.names[4], cfg.nodes.types[1], inputsNames, outputsNames);
 		this.inputsNames = inputsNames;
 		this.trueFieldName = trueFieldName;
 		this.falseFieldName = falseFieldName;
@@ -214,13 +214,17 @@ class ForkNode extends Base.Node {
 // --------------------------- Units Cmds --------------------------- //
 
 class FireCmdNode extends Base.Node {
-	constructor(id, name) {
-		super(id, name, [cfg.units.name], []);
+	constructor(id) {
+		super(id, cfg.nodes.names[5], cfg.nodes.types[2], [cfg.units.name], []);
 	}
 
 	setValue(field, value) {
 		console.error(`${this.name} node has not constant input values!`);
 		return this;
+	}
+
+	getValues() {
+		return { 0: this.inputs[cfg.units.name].data };
 	}
 
 	_executeSpecial() {
@@ -246,13 +250,17 @@ class FireCmdNode extends Base.Node {
 }
 
 class HoldCmdNode extends Base.Node {
-	constructor(id, name) {
-		super(id, name, [cfg.units.name], []);
+	constructor(id) {
+		super(id, cfg.nodes.names[6], cfg.nodes.types[2], [cfg.units.name], []);
 	}
 
 	setValue(field, value) {
 		console.error(`${this.name} node has not constant input values!`);
 		return this;
+	}
+
+	getValues() {
+		return { 0: this.inputs[cfg.units.name].data };
 	}
 
 	_executeSpecial() {
@@ -263,51 +271,51 @@ class HoldCmdNode extends Base.Node {
 	}
 }
 
-class MoveCmdNode extends Base.Node {
-	constructor(id, name) {
-		super(id, name, [cfg.units.name], []);
-	}
-
-	setValue(field, value) {
-		console.error(`${this.name} node has not constant input values!`);
-		return this;
-	}
-
-	_executeSpecial() {
-
-	}
-}
+// class MoveCmdNode extends Base.Node {
+// 	constructor(id) {
+// 		super(id, cfg.nodes.names[7], cfg.nodes.types[2], [cfg.units.name], []);
+// 	}
+//
+// 	setValue(field, value) {
+// 		console.error(`${this.name} node has not constant input values!`);
+// 		return this;
+// 	}
+//
+// 	_executeSpecial() {
+//
+// 	}
+// }
 
 
 // --------------------------- Factory Building --------------------------- //
 
-class DealNode extends Base.Node {
-	constructor(id, name) {
-		super(id, name, ['deal'], []);
-	}
-
-	setValue(field, value) {
-		console.error(`${this.name} node has not constant input values!`);
-		return this;
-	}
-
-	_executeSpecial() {
-
-	}
-}
+// class DealNode extends Base.Node {
+// 	constructor(id) {
+// 		super(id, cfg.nodes.names[8], cfg.nodes.types[3], ['deal'], []);
+// 	}
+//
+// 	setValue(field, value) {
+// 		console.error(`${this.name} node has not constant input values!`);
+// 		return this;
+// 	}
+//
+// 	_executeSpecial() {
+//
+// 	}
+// }
 
 
 // --------------------------- Factory Building --------------------------- //
 
 var Factory = require('../common/factory');
 var nodeFactory = new Factory();
-nodeFactory.registrate('root', RootNode);
-nodeFactory.registrate('filter', FilterNode);
-nodeFactory.registrate('manipulator', ManipulatorNode);
-nodeFactory.registrate('conditional', ConditionalNode);
-nodeFactory.registrate('fork', ForkNode);
-nodeFactory.registrate('cmdFire', FireCmdNode);
-nodeFactory.registrate('cmdHold', HoldCmdNode);
+nodeFactory.registrate(cfg.nodes.names[0], RootNode);
+nodeFactory.registrate(cfg.nodes.names[1], FilterNode);
+nodeFactory.registrate(cfg.nodes.names[2], ManipulatorNode);
+nodeFactory.registrate(cfg.nodes.names[3], ConditionalNode);
+nodeFactory.registrate(cfg.nodes.names[4], ForkNode);
+nodeFactory.registrate(cfg.nodes.names[5], FireCmdNode);
+nodeFactory.registrate(cfg.nodes.names[6], HoldCmdNode);
 // nodeFactory.registrate('cmdMove', MoveCmdNode);
 // nodeFactory.registrate('dealer', DealNode);
 
@@ -321,9 +329,9 @@ module.exports = {
 
 	CmdFire: FireCmdNode,
 	CmdHold: HoldCmdNode,
-	CmdMove: MoveCmdNode,
+	// CmdMove: MoveCmdNode,
 
-	Dealer: DealNode,
+	// Dealer: DealNode,
 
 	factory: nodeFactory
 };
