@@ -64,9 +64,9 @@ const titles = {
 
 			'cmdFire',
 			'cmdHold',
-			'cmdMove',
+			// 'cmdMove',
 
-			'dealer'
+			// 'dealer'
 		]
 	}
 };

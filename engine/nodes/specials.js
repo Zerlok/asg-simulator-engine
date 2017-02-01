@@ -12,13 +12,13 @@ class RootNode extends Base.Node {
 		super(id, name, cfg.nodes.defaultFields, cfg.nodes.defaultFields);
 	}
 
-	initData(selfUnits, enemyUnits, roundNum, deals) {
+	initData(selfUnits, enemyUnits, roundNum) {
 		this.inputs[cfg.units.name].setConstData({
 				own: selfUnits,
 				enemies: enemyUnits
 		});
 		this.inputs.round.setConstData(roundNum);
-		this.inputs.deals.setConstData(deals);
+		this.inputs.deals.setConstData(0);
 	}
 
 	_executeSpecial() {
@@ -190,6 +190,10 @@ class ForkNode extends Base.Node {
 		}
 	}
 
+	isReady() {
+		return (!this.inputs.result.empty);
+	}
+
 	getOutput(field) {
 		if (this.inputs.result.data) {
 			return this[this.trueFieldName][field];
@@ -200,7 +204,7 @@ class ForkNode extends Base.Node {
 
 	_executeSpecial() {
 		this.refreshOutputs();
-		for (var name of inputsNames) {
+		for (var name of this.inputsNames) {
 			this.getOutput(name).data = this.inputs[name].data;
 		}
 	}
@@ -220,13 +224,13 @@ class FireCmdNode extends Base.Node {
 	}
 
 	_executeSpecial() {
-		var targets = this.inputs.enemies.data[cfg.units.enemy];
-		var len = tarrgets.length;
+		var targets = this.inputs[cfg.units.name].data[cfg.units.enemy];
+		var len = targets.length;
 		if (len == 0)
 			return;
 
 		var totalDmg = 0;
-		var ownUnits = this.inputs.data[cfg.units.self];
+		var ownUnits = this.inputs[cfg.units.name].data[cfg.units.enemy];
 		for (var i = 0; i < ownUnits.length; ++i) {
 			totalDmg += ownUnits[i].fire();
 		}
@@ -234,7 +238,7 @@ class FireCmdNode extends Base.Node {
 		var target, dmg;
 		while (totalDmg > 0) {
 			target = targets[Funcs.rand(0, len-1)];
-			dmg = Funcs.rand(1, totalDmg/2);
+			dmg = Funcs.rand(0, totalDmg/2) + 1; // NOTE: dmg may equals 0, so +1 is required.
 			target.receiveDamage(dmg);
 			totalDmg -= dmg;
 		}
@@ -252,7 +256,7 @@ class HoldCmdNode extends Base.Node {
 	}
 
 	_executeSpecial() {
-		var ownUnits = this.inputs.own.data[cfg.units.self];
+		var ownUnits = this.inputs[cfg.units.name].data[cfg.units.self];
 		for (var i = 0; i < ownUnits.length; ++i) {
 			ownUnits[i].restoreShields();
 		}
@@ -304,8 +308,8 @@ nodeFactory.registrate('conditional', ConditionalNode);
 nodeFactory.registrate('fork', ForkNode);
 nodeFactory.registrate('cmdFire', FireCmdNode);
 nodeFactory.registrate('cmdHold', HoldCmdNode);
-nodeFactory.registrate('cmdMove', MoveCmdNode);
-nodeFactory.registrate('dealer', DealNode);
+// nodeFactory.registrate('cmdMove', MoveCmdNode);
+// nodeFactory.registrate('dealer', DealNode);
 
 
 module.exports = {

@@ -7,7 +7,7 @@ function clamp(a, b, c) {
 
 
 function rand(a, b) {
-	return Math.floor(Math.random() * (b-a) + a);
+	return Math.floor(Math.random() * (b-a)) + a;
 }
 
 

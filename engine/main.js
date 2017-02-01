@@ -19,9 +19,9 @@ function createStrategy(filename) {
 	ed.link(3, 'ships', 4, 'ships');
 
 	ed.createNode('filter').setValue('side', 'own').setValue('type', 'demolisher');
-	ed.createNode('filter').setValue('side', 'enemy').setValue('type', 'demolisher');
+	ed.createNode('filter').setValue('side', 'enemies').setValue('type', 'demolisher');
 	ed.createNode('conditional').setValue('operator', 'gt');
-	ed.createNode('manipulator');
+	ed.createNode('manipulator').setValue('operation', 'union');
 	ed.createNode('fork'); // 9
 	ed.createNode('cmdHold');
 	ed.createNode('cmdFire');
@@ -38,8 +38,8 @@ function createStrategy(filename) {
 }
 
 
-// createStrategy(filename);
-// ed.save(filename);
-ed.load(filename);
+createStrategy(filename);
+ed.save(filename);
+// ed.load(filename);
 console.log('-------------------------------------------------------------------');
 ed.showNodes();
