@@ -5,3 +5,4 @@ syntax: glob
 *.txt
 node_modules/*
 *_sample*
+*jsPlumb*
