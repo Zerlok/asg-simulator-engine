@@ -125,7 +125,7 @@ function simulateBattle(attacker, defender) {
 		++idx;
 	}
 
-	battle.save("./logs/b"+battle.now());
+	// battle.save("./logs/children/b"+battle.now());
 }
 
 

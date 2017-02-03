@@ -6,7 +6,7 @@ var fs = require('fs');
 var http = require('http');
 var express = require('express');
 var bodyParser = require('body-parser');
-var spawnChild = require('child_process').spawn;
+// var spawnChild = require('child_process').spawn;
 
 var Funcs = require('./common/functions');
 var config = require('./config');
@@ -16,14 +16,49 @@ var Units = require('./units');
 
 
 var app = express();
-app.use("/static", express.static("strategies"));
-app.use("/static/plumb", express.static("jsPlumb"));
+app.use("/static/libs", express.static("libs"));
+app.use("/public", express.static("public"));
+
 var urlParser = bodyParser.urlencoded({ extended: false });
 var ed = new Nodes.Editor();
 
 
 app.get('/', function (request, response) {
 	response.end(config.app.fullname + " is working.");
+});
+
+
+app.get('/nodes/config', function(request, response) {
+	response.setHeader('Content-Type', 'application/json');
+	response.end(JSON.stringify(config.engine.nodes));
+});
+
+
+app.get('/nodes/viewer.js', function(request, response) {
+	response.sendFile(__dirname+"/nodes/viewer.js");
+});
+
+
+app.get('/nodes/editor', function(request, response) {
+	response.sendFile(__dirname+"/html/strat_editor.html");
+});
+
+
+app.get('/nodes/save', function(request, response) {
+	var name = request.params['name'];
+	if (name == null) {
+		response.end(JSON.stringify({result: "failure"}));
+		return;
+	}
+
+	var path = name.split("/");
+	name = path[path.length-1];
+	fs.writeFile("./public/"+name, request.params['data'], function(err) {
+		if (err) return console.error(`Caught an error: ${err} while writing into './public/${name}' file!`);
+	});
+
+	console.log(`Nodes were written into './public/${name}' successfuly.`);
+	response.end(JSON.stringify({result: "success"}));
 });
 
 
@@ -47,27 +82,14 @@ app.get('/', function (request, response) {
 // });
 
 
-app.get('/test/strategy', function(request, response) {
-	// const filename = "./strategies/tmp.txt";
-	// var text = fs.readFileSync(filename, 'utf8', function(err, d) {
-	// 	if (err) return console.error(`Caught an error: ${err} while reading '${filename}' file!`);
-	// });
-	//
-	// response.setHeader('Content-Type', 'application/json');
-	// response.end(text);
-
-	response.sendFile(__dirname+"/html/strat_editor.html");
-});
-
-
-app.get('/test/battle', function(request, response) {
+app.get('/battle', function(request, response) {
 	var attUnits = Units.builder.total(Funcs.rand(256, 512));
 	var defUnits = Units.builder.total(Funcs.rand(256, 512));
-	var attNodes = ed.load("./strategies/tmp.txt");
-	var defNodes = ed.load("./strategies/tmp.txt");
+	var attNodes = ed.load("./public/attacker.txt");
+	var defNodes = ed.load("./public/defender.txt");
 
-	var attacker = new Battle.Player("PlayerA", attUnits, attNodes);
-	var defender = new Battle.Player("PlayerB", defUnits, defNodes);
+	var attacker = new Battle.Player("Foo", attUnits, attNodes);
+	var defender = new Battle.Player("Bar", defUnits, defNodes);
 
 	logger.log(`Attacker: units(${attacker.units.current.length}) ==> ${attacker.score}`);
 	logger.log(`Defender: units(${defender.units.current.length}) ==> ${defender.score}`);
@@ -106,6 +128,5 @@ var server = app.listen(config.app.port, function () {
 
 	console.log(`Example app listening at http://${host}:${port}`);
 })
-
 
 console.log(`Running Simulator server on ${config.app.host}:${config.app.port} ...`);

@@ -1,7 +1,5 @@
 "use strict"
 
-const Funcs = require('./common/functions');
-
 
 // ------------------------------ TITLES ------------------------------ //
 
@@ -165,7 +163,36 @@ var nodes = {
 		"deals"
 	],
 	types: titles.nodes.types,
-	names: titles.nodes.names
+	names: titles.nodes.names,
+
+	"root": {
+		inputs: [],
+		outputs: [ units.name, "round" ]
+	},
+	"filter": {
+		inputs: [ units.name, "side", "type", "hull", "shields"],
+		outputs: [ units.name ]
+	},
+	"manipulator": {
+		inputs: ["leftSet", "rightSet", "operator"],
+		outputs: ["resultSet"]
+	},
+	"conditional": {
+		inputs: ["leftValue", "rightValue", "operator"],
+		outputs: ["resultValue"]
+	},
+	"fork": {
+		inputs: [ units.name, "round", "result" ],
+		outputs: [ "onTrue_"+units.name, "onTrue_round", "onFalse_"+units.name, "onFalse_round" ]
+	},
+	"cmdFire": {
+		inputs: [ units.name ],
+		outputs: []
+	},
+	"cmdHold": {
+		inputs: [ units.name ],
+		outputs: []
+	}
 };
 
 

@@ -10,7 +10,7 @@ function fromJson(text) {
 
 	var data = JSON.parse(text);
 
-	for (var i in data.nodes) {
+	for (var i = 0; i < data.nodes.length; ++i) {
 		var row = data.nodes[i];
 		var node = nodeFactory.create(row.name, i);
 		for (var f in row.ins) {
@@ -20,7 +20,7 @@ function fromJson(text) {
 		lst.push(node);
 	}
 
-	for (var i in data.links) {
+	for (var i = 0; i < data.links.length; ++i) {
 		var row = data.links[i];
 		var parentNode = lst[row.parent];
 		for (var p in row.pairs) {
@@ -29,7 +29,7 @@ function fromJson(text) {
 			for (var c in pair.children) {
 				var child = pair.children[c];
 				// console.log(`Trying to link ${parentNode.name}.${portName} to ${lst[child.num].name}.${child.port}`);
-				parentNode.outputs[portName].link(lst[child.num].inputs[child.port]);
+				parentNode.link(portName, lst[child.num], child.port);
 			}
 		}
 	}
@@ -42,7 +42,7 @@ function fromJson(text) {
 
 function toJson(nodeList) {
 	var data = {'nodes': [], 'links': []};
-	for (var i in nodeList) {
+	for (var i = 0; i < nodeList.length; ++i) {
 		var node = nodeList[i];
 		var row = {'id': i, 'name': node.name};
 		var ins = [];

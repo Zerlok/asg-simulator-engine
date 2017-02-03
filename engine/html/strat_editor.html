@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html ng-app="">
+<html>
 <head>
 	<meta http-equiv="content-type" content="text/html;charset=utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no"/>
@@ -8,170 +8,67 @@
 	<link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
 	<link href="//fonts.googleapis.com/css?family=Lato:400,700" rel="stylesheet">
 
-	<link rel="stylesheet" href="/static/plumb/css/jsPlumbToolkit-defaults.css">
-	<link rel="stylesheet" href="/static/plumb/css/main.css">
-	<link rel="stylesheet" href="/static/plumb/css/jsPlumbToolkit-demo.css">
-	<link rel="stylesheet" href="/static/plumb/dist/demo/flowchart/demo.css">
+	<link rel="stylesheet" href="/static/libs/jsPlumb/css/jsPlumbToolkit-defaults.css">
+	<link rel="stylesheet" href="/static/libs/jsPlumb/css/main.css">
+	<link rel="stylesheet" href="/static/libs/jsPlumb/css/jsPlumbToolkit-demo.css">
+	<link rel="stylesheet" href="/static/libs/jsPlumb/dist/demo/flowchart/demo.css">
 
 	<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 	<script src="//cdnjs.cloudflare.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
-	<script src="/static/plumb/jsPlumb-2.2.8-min.js"></script>
+	<script src="/static/libs/jsPlumb/jsPlumb-2.2.8-min.js"></script>
 </head>
 <body>
-	<button onclick="nodeCreation();">Add node.</button>
+	<p>Choose strategy:</p>
+	<select>
+		<option onclick="loadStrategy('attacker.json')">Attacker</option>
+		<option onclick="loadStrategy('defender.json')">Defender</option>
+	</select>
+	<button onclick="saveStrategy()">Save</button>
+
+	<p>Add node:</p>
+	<select>
+		<option onclick="nodeEditor.createNode('root')">Root</option>
+		<option onclick="nodeEditor.createNode('filter')">Filter</option>
+		<option onclick="nodeEditor.createNode('manipulator')">Manipulator</option>
+		<option onclick="nodeEditor.createNode('conditional')">Conditional</option>
+		<option onclick="nodeEditor.createNode('fork')">Fork</option>
+		<option onclick="nodeEditor.createNode('cmdFire')">Cmd Fire</option>
+		<option onclick="nodeEditor.createNode('cmdHold')">Cmd Hold</option>
+	</select>
+
 	<div class="jtk-demo-main">
 		<div class="jtk-demo-canvas canvas-wide flowchart-demo jtk-surface jtk-surface-nopan" id="asg-node-container">
-			<div class="window jtk-node asg-node" id="flowchartWindow0"><strong>0</strong></div>
-			<div class="window jtk-node asg-node" id="flowchartWindow1"><strong>1</strong></div>
-			<div class="window jtk-node asg-node" id="flowchartWindow2"><strong>2</strong></div>
-			<div class="window jtk-node asg-node" id="flowchartWindow3"><strong>3</strong></div>
-			<div class="window jtk-node asg-node" id="flowchartWindow4"><strong>4</strong></div>
+			<!-- ASG nodes here -->
 		</div>
 	</div>
 
 	<script>
-		// this is the paint style for the connecting lines..
-		var defaults = {
-			plumb: {
-				Container: "asg-node-container",
-				DragOptions: { cursor: 'pointer', zIndex: 2000 },
-				// ConnectionsDetachable: true,
-				ConnectionOverlays: [
-					[ "Arrow", {
-						location: 1,
-						visible: true,
-						width: 11,
-						length: 16,
-						id:"ARROW"
-					} ]
-				]
-			}
-		};
-		var connectorPaintStyle = {
-				strokeWidth: 2,
-				stroke: "#535353",
-				joinstyle: "round",
-				outlineStroke: null
-			},
-		// .. and this is the hover style.
-			connectorHoverStyle = {
-				stroke: "#216477",
-				outlineStroke: null
-			},
-			endpointHoverStyle = {
-				fill: "#216477",
-				outlineStroke: null
-			},
-		// the definition of source endpoints (the small blue ones)
-			sourceEndpointParams = {
-				isSource: true,
-				endpoint: "Dot",
-				paintStyle: {
-					stroke: "#7AB02C",
-					fill: "transparent",
-					radius: 5,
-					strokeWidth: 1
-				},
-				connector: [ "Bezier", { curviness: 150, alwaysRespectStubs: false } ],
-				connectorStyle: connectorPaintStyle,
-				hoverPaintStyle: endpointHoverStyle,
-				connectorHoverStyle: connectorHoverStyle,
-				dragOptions: {},
-				maxConnections: -1
-			},
-		// the definition of target endpoints (will appear when the user drags a connection)
-			targetEndpointParams = {
-				isTarget: true,
-				endpoint: "Dot",
-				paintStyle: {
-					fill: "#7AB02C",
-					radius: 5
-				},
-				connectorStyle: connectorPaintStyle,
-				hoverPaintStyle: endpointHoverStyle,
-				connectorHoverStyle: connectorHoverStyle,
-				dropOptions: { hoverClass: "hover", activeClass: "active" },
-				maxConnections: -1
-			};
-		const nodesId = "flowchart";
-		var _addEndpoints = function (plumb, toId, inputs, outputs) {
-			var len = inputs.length;
-			for (var i = 0; i < len; i++) {
-				plumb.addEndpoint(nodesId + toId, targetEndpointParams, {
-					anchor: [0.0, (i+1) / (len+1), -0.8, 0],
-					uuid: toId + "-in-" + inputs[i]
-				});
-			}
-			len = outputs.length;
-			for (var i = 0; i < len; i++) {
-				plumb.addEndpoint(nodesId + toId, sourceEndpointParams, {
-					anchor: [1.0, (i+1) / (len+1), 0.8, 0],
-					uuid: toId + "-out-" + outputs[i]
-				});
-			}
-		};
-
-		var instance;
-		jsPlumb.ready(function () {
-			instance = window.jsp = jsPlumb.getInstance(defaults.plumb);
-
-			// suspend drawing and initialise.
-			instance.batch(function () {
-				_addEndpoints(instance, "Window0", [], ["bar"]);
-				_addEndpoints(instance, "Window1", ["foo", "baz"], ["bar"]);
-				_addEndpoints(instance, "Window2", ["foo"], ["bar", "yt", "tyy"]);
-				_addEndpoints(instance, "Window3", ["foo"], ["bar"]);
-				_addEndpoints(instance, "Window4", ["foo", "baz"], ["bar"]);
-
-				instance.draggable($(".asg-node"));
-
-				instance.connect({uuids: ["Window1-out-bar", "Window2-in-foo"]});
-				instance.connect({uuids: ["Window2-out-bar", "Window4-in-foo"]});
-				instance.connect({uuids: ["Window2-out-tyy", "Window4-in-baz"]});
-				instance.connect({uuids: ["Window3-out-bar", "Window0-in-foo"]});
-
-				instance.bind("connection", function (info, originalEvent) {
-					console.log("linking");
-					console.log(info.connection.endpoints[0].getUuid());
-					console.log(info.connection.endpoints[1].getUuid());
-					// TODO: link nodes.
-				});
-
-				instance.bind("connectionDrag", function (connection) {
-					console.log("relinking");
-					console.log(connection.endpoints[0].getUuid());
-					console.log(connection.endpoints[1].getUuid());
-					// console.log("connection " + connection.id + " is being dragged. suspendedElement is ", connection.suspendedElement, " of type ", connection.suspendedElementType);
-					// TODO: unlink nodes.
-				});
-
-				instance.bind("click", function (conn, originalEvent) {
-					console.log("detach");
-					console.log(conn.endpoints[0].getUuid());
-					console.log(conn.endpoints[1].getUuid());
-					instance.detach(conn);
-					// TODO: unlink nodes.
-				});
-			});
-			// jsPlumb.fire("jsPlumbDemoLoaded", instance);
+		$.getJSON("/nodes/config", function(data) {
+			nodeEditor.cfg = data;
 		});
 
-
-		function nodeCreation() {
-			var nodeContainer = $("#asg-node-container");
-			var nodes = $(".asg-node");
-			var id = nodes.length;
-			var windowId = "Window" + id;
-			var node = $("<div>", {"id": nodesId+windowId, "class": "window jtk-node asg-node"});
-			node.append("<strong>"+id+"</strong>");
-			nodeContainer.append(node);
-
-			jsPlumb.setContainer(nodeContainer);
-			_addEndpoints(instance, windowId, ["iuu"], ["ouu"]);
-			instance.draggable(node, {containment: true});
-			return windowId;
-		};
+		var stratName;
+		function saveStrategy() {
+			// TODO: save
+			$.ajax({
+				type: "GET",
+				dataType : 'json',
+				async: false,
+				url: "/nodes/save",
+				data: { name: stratName, data: nodeEditor.toJson() },
+				success: function () { alert("Thanks!"); },
+				failure: function() { alert("Error!");}
+			});
+		}
+		function nodeLoader(data) {
+			nodeEditor.fromJson(data);
+		}
+		function loadStrategy(name) {
+			stratName = name;
+			$.getJSON("/public/"+stratName, nodeLoader);
+		}
 	</script>
+	<script src="/nodes/viewer.js"></script>
 
 </body>
 </html>
