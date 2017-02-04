@@ -11,7 +11,7 @@
 	<link rel="stylesheet" href="/static/libs/jsPlumb/css/jsPlumbToolkit-defaults.css">
 	<link rel="stylesheet" href="/static/libs/jsPlumb/css/main.css">
 	<link rel="stylesheet" href="/static/libs/jsPlumb/css/jsPlumbToolkit-demo.css">
-	<link rel="stylesheet" href="/static/libs/jsPlumb/dist/demo/flowchart/demo.css">
+	<link rel="stylesheet" href="/static/css/nodes.css">
 
 	<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 	<script src="//cdnjs.cloudflare.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
@@ -24,6 +24,7 @@
 		<option onclick="loadStrategy('defender.json')">Defender</option>
 	</select>
 	<button onclick="saveStrategy()">Save</button>
+	<button onclick="nodeEditor.deleteAll()">Clear</button>
 
 	<p>Add node:</p>
 	<select>
@@ -36,10 +37,8 @@
 		<option onclick="nodeEditor.createNode('cmdHold')">Cmd Hold</option>
 	</select>
 
-	<div class="jtk-demo-main">
-		<div class="jtk-demo-canvas canvas-wide flowchart-demo jtk-surface jtk-surface-nopan" id="asg-node-container">
-			<!-- ASG nodes here -->
-		</div>
+	<div class="jtk-demo-canvas canvas-wide flowchart-demo jtk-surface jtk-surface-nopan" id="asg-node-container">
+		<!-- ASG nodes here -->
 	</div>
 
 	<script>
@@ -68,7 +67,7 @@
 			$.getJSON("/public/"+stratName, nodeLoader);
 		}
 	</script>
-	<script src="/nodes/viewer.js"></script>
+	<script src="/static/js/viewer.js"></script>
 
 </body>
 </html>

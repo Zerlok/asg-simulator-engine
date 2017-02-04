@@ -1,23 +1,26 @@
 "use strict"
 
 
-const nodesContainerId = "asg-node-container";
-const nodesId = "asg-nodeId";
+// Nodes Html setup.
+const nodesContainerHtmlId = "asg-node-container";
+const nodesHtmlId = "asg-nodeId";
+const nodesInSep = "-in-";
+const nodesOutSep = "-out-";
 
 // jsPlumb setup.
 var defaults = {
 	plumbInstance: {
-		Container: nodesContainerId,
+		Container: nodesContainerHtmlId,
 		DragOptions: { cursor: 'pointer', zIndex: 2000 },
-		ConnectionOverlays: [
-			[ "Arrow", {
-				visible: true,
-				width: 11,
-				length: 16,
-				location: 0.8,
-				id:"ARROW"
-			} ]
-		]
+		// ConnectionOverlays: [
+		// 	[ "Arrow", {
+		// 		visible: true,
+		// 		width: 11,
+		// 		length: 16,
+		// 		location: 0.8,
+		// 		id:"ARROW"
+		// 	} ]
+		// ]
 	}
 };
 defaults.connectorPaintStyle = {
@@ -48,7 +51,15 @@ defaults.sourceProperties = {
 	hoverPaintStyle: defaults.endpointHoverStyle,
 	connectorHoverStyle: defaults.connectorHoverStyle,
 	dragOptions: {},
-	maxConnections: -1
+	maxConnections: -1,
+	overlays: [
+		[ "Label", {
+			location: [0.0, 0.5],
+			label: "Source",
+			cssClass: "endpointSourceLabel",
+			visible: true
+		} ]
+	]
 };
 defaults.targetProperties = {
 	isTarget: true,
@@ -61,7 +72,15 @@ defaults.targetProperties = {
 	hoverPaintStyle: defaults.endpointHoverStyle,
 	connectorHoverStyle: defaults.connectorHoverStyle,
 	dropOptions: { hoverClass: "hover", activeClass: "active" },
-	maxConnections: -1
+	maxConnections: -1,
+	overlays: [
+		[ "Label", {
+			location: [0.0, 0.5],
+			label: "Target",
+			cssClass: "endpointTargetLabel",
+			visible: true
+		} ]
+	]
 };
 
 
@@ -112,28 +131,30 @@ var NodeEditor = function(plumb) {
 			var id = this.nodes.length;
 			var node = new Node.Block(id, name, this.cfg[name].inputs, this.cfg[name].outputs);
 
-			var nodeHtml = $("<div>", {"id": nodesId+node.id, "class": "window jtk-node asg-node"});
+			var nodeHtml = $("<div>", {"id": nodesHtmlId + node.id, "class": "window jtk-node asg-node"});
 			nodeHtml.append("<p>"+node.name+"</p>");
 			for (var i = 0; i < node.inputs.length; ++i) {
 				// nodeHtml.append("<p>"+node.inputs[i].name+"</p>");
 			}
 
-			var nodeContainer = $("#asg-node-container");
+			var nodeContainer = $("#" + nodesContainerHtmlId);
 			nodeContainer.append(nodeHtml);
 			this.plumb.setContainer(nodeContainer);
 
-			var len = node.inputs.length;
-			for (var i = 0; i < len; ++i) {
-				plumb.addEndpoint(nodesId + node.id, defaults.targetProperties, {
-					anchor: [0.0, (i+1) / (len+1), -0.8, 0],
-					uuid: node.id + "-in-" + node.inputs[i].name
+			var len = node.inputs.length + node.outputs.length + 1;
+			for (var i = 0; i < node.outputs.length; ++i) {
+				defaults.sourceProperties.overlays[0][1].label = node.outputs[i].name;
+				plumb.addEndpoint(nodesHtmlId + node.id, defaults.sourceProperties, {
+					anchor: [1.0, (i+1) / len, 0.6, 0],
+					uuid: node.id + nodesOutSep + node.outputs[i].name
 				});
 			}
-			len = node.outputs.length;
-			for (var i = 0; i < len; ++i) {
-				plumb.addEndpoint(nodesId + node.id, defaults.sourceProperties, {
-					anchor: [1.0, (i+1) / (len+1), 0.8, 0],
-					uuid: node.id + "-out-" + node.outputs[i].name
+			var offset = node.outputs.length + 1;
+			for (var i = 0; i < node.inputs.length; ++i) {
+				defaults.targetProperties.overlays[0][1].label = node.inputs[i].name;
+				plumb.addEndpoint(nodesHtmlId + node.id, defaults.targetProperties, {
+					anchor: [0.0, (i+offset) / len, -0.6, 0],
+					uuid: node.id + nodesInSep + node.inputs[i].name
 				});
 			}
 
@@ -159,7 +180,15 @@ var NodeEditor = function(plumb) {
 			}
 
 			this.nodes.splice(idx, 1);
+			this.plumb.empty(nodesHtmlId + node.id);
+			$("#" + nodesHtmlId + node.id).remove();
 			return true;
+		},
+		deleteAll() {
+			this.nodes = [];
+			this.links = [];
+			this.plumb.deleteEveryEndpoint();
+			$("#" + nodesContainerHtmlId).empty();
 		},
 		indexLink(lnk) {
 			for (var i = 0; i < this.links.length; ++i) {
@@ -175,44 +204,78 @@ var NodeEditor = function(plumb) {
 			}
 			return -1;
 		},
-		makeLink(sid, sp, tid, tp) {
-			if ((this.indexNode(sid) == -1)
-					|| (this.indexNode(tid) == -1))
+		makeLink(connection) {
+			var input = connection.endpoints[1].getUuid();
+			var output = connection.endpoints[0].getUuid();
+			if ((input == null) || (output == null))
 				return false;
 
-			var lnk = new Node.Link(sid, sp, tid, tp);
-			if (this.indexLink(lnk) != -1)
-				return false;
+			var ilst = input.split(nodesInSep);
+			var olst = output.split(nodesOutSep);
 
+			if ((this.indexNode(olst[0]) == -1)
+					|| (this.indexNode(ilst[0]) == -1)) {
+				this.plumb.detach(connection);
+				return false;
+			}
+
+			var lnk = new Node.Link(ilst[0], ilst[1], olst[0], olst[1]);
+			if (this.indexLink(lnk) != -1) {
+				this.plumb.detach(connection);
+				return false;
+			}
+
+			console.log(`Linking: ${olst} --> ${ilst}`);
 			this.links.push(lnk);
 			return true;
 		},
-		freeLink(sid, sp, tid, tp) {
-			if ((this.indexNode(sid) == -1)
-					|| (this.indexNode(tid) == -1))
+		freeLink(connection) {
+			var input = connection.endpoints[1].getUuid();
+			var output = connection.endpoints[0].getUuid();
+			if ((input == null) || (output == null))
+				return;
+
+			var ilst = input.split(nodesInSep);
+			var olst = output.split(nodesOutSep);
+
+			if ((this.indexNode(olst[0]) == -1)
+					|| (this.indexNode(ilst[0]) == -1))
 				return false;
 
-			var idx = this.indexLink(new Node.Link(sid, sp, tid, tp));
+			var idx = this.indexLink(new Node.Link(ilst[0], ilst[1], olst[0], olst[1]));
 			if (idx == -1)
 				return false;
 
+			console.log(`Unlinking: ${olst} --> ${ilst}`);
 			this.links.splice(idx, 1);
 			return true;
 		},
-		detachLink(conn, sid, sp, tid, tp) {
-			this.freeLink(sid, sp, tid, tp);
-			this.plumb.detach(conn);
+		detachLink(connection) {
+			var res = this.freeLink(connection);
+			if (res)
+				this.plumb.detach(connection);
+
+			return res;
 		},
 		fromJson: function(data) {
-			// TODO: remove all previous nodes and links.
-			if (data == null) {
-				this.nodes = [];
-				this.links = [];
-				return;
+			this.deleteAll();
+
+			this.nodes = [];
+			for (var node of data.nodes) {
+				this.createNode(node.name)
 			}
-			// var data = JSON.parse(text);
-			this.nodes = data.nodes;
-			this.links = data.links;
+
+			this.links = [];
+			for (var link of data.links) {
+				this.links.push(new Node.Link(link.source.id, link.source.port, link.target.id, link.target.port));
+				this.plumb.connect({
+					uuids: [
+						link.source.id + nodesOutSep + link.source.port,
+						link.target.id + nodesInSep + link.target.port
+					],
+					editable: true
+				});
+			}
 		},
 		toJson: function() {
 			return JSON.stringify({
@@ -234,39 +297,13 @@ jsPlumb.ready(function () {
 		nodeEditor = new NodeEditor(jpi);
 
 		jpi.bind("connection", function (info, originalEvent) {
-			var input = info.connection.endpoints[1].getUuid();
-			var output = info.connection.endpoints[0].getUuid();
-			if ((input == null) || (output == null))
-				return;
-
-			var olst = output.split("-out-");
-			var ilst = input.split("-in-");
-			var res = nodeEditor.makeLink(olst[0], olst[1], ilst[0], ilst[1]);
-			console.log(`Linking: ${output} --> ${input} ${res}`);
+			console.log(nodeEditor.makeLink(info.connection));
 		});
-
 		jpi.bind("connectionDrag", function (connection) {
-			var input = connection.endpoints[1].getUuid();
-			var output = connection.endpoints[0].getUuid();
-			if ((input == null) || (output == null))
-				return;
-
-			var olst = output.split("-out-");
-			var ilst = input.split("-in-");
-			var res = nodeEditor.freeLink(olst[0], olst[1], ilst[0], ilst[1]);
-			console.log(`Unlinking: ${output} --> ${input} ${res}`);
+			console.log(nodeEditor.freeLink(connection));
 		});
-
 		jpi.bind("click", function (connection, originalEvent) {
-			var input = connection.endpoints[1].getUuid();
-			var output = connection.endpoints[0].getUuid();
-			if ((input == null) || (output == null))
-				return;
-
-			var olst = output.split("-out-");
-			var ilst = input.split("-in-");
-			var res = nodeEditor.detachLink(connection, olst[0], olst[1], ilst[0], ilst[1]);
-			console.log(`Unlinking: ${output} --> ${input} ${res}`);
+			console.log(nodeEditor.detachLink(connection));
 		});
 	});
 	// jsPlumb.fire("jsPlumbDemoLoaded", jpi);

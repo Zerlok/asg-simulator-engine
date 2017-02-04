@@ -8,16 +8,18 @@ var express = require('express');
 var bodyParser = require('body-parser');
 // var spawnChild = require('child_process').spawn;
 
-var Funcs = require('./common/functions');
-var config = require('./config');
-var Battle = require('./battle');
-var Nodes = require('./nodes');
-var Units = require('./units');
+var Funcs = require('../engine/common/functions');
+var config = require('../engine/config');
+var Battle = require('../engine/battle');
+var Nodes = require('../engine/nodes');
+var Units = require('../engine/units');
 
 
 var app = express();
+app.use("/static/css", express.static("html/css"));
+app.use("/static/js", express.static("html/js"));
 app.use("/static/libs", express.static("libs"));
-app.use("/public", express.static("public"));
+app.use("/public", express.static("html/public"));
 
 var urlParser = bodyParser.urlencoded({ extended: false });
 var ed = new Nodes.Editor();
@@ -34,13 +36,8 @@ app.get('/nodes/config', function(request, response) {
 });
 
 
-app.get('/nodes/viewer.js', function(request, response) {
-	response.sendFile(__dirname+"/nodes/viewer.js");
-});
-
-
 app.get('/nodes/editor', function(request, response) {
-	response.sendFile(__dirname+"/html/strat_editor.html");
+	response.sendFile(__dirname+"/nodes-editor.html");
 });
 
 
@@ -53,11 +50,11 @@ app.get('/nodes/save', function(request, response) {
 
 	var path = name.split("/");
 	name = path[path.length-1];
-	fs.writeFile("./public/"+name, request.params['data'], function(err) {
-		if (err) return console.error(`Caught an error: ${err} while writing into './public/${name}' file!`);
+	fs.writeFile("/public/"+name, request.params['data'], function(err) {
+		if (err) return console.error(`Caught an error: ${err} while writing into '/public/${name}' file!`);
 	});
 
-	console.log(`Nodes were written into './public/${name}' successfuly.`);
+	console.log(`Nodes were written into '/public/${name}' successfuly.`);
 	response.end(JSON.stringify({result: "success"}));
 });
 
@@ -85,8 +82,8 @@ app.get('/nodes/save', function(request, response) {
 app.get('/battle', function(request, response) {
 	var attUnits = Units.builder.total(Funcs.rand(256, 512));
 	var defUnits = Units.builder.total(Funcs.rand(256, 512));
-	var attNodes = ed.load("./public/attacker.txt");
-	var defNodes = ed.load("./public/defender.txt");
+	var attNodes = ed.load("./public/attacker.json");
+	var defNodes = ed.load("./public/defender.json");
 
 	var attacker = new Battle.Player("Foo", attUnits, attNodes);
 	var defender = new Battle.Player("Bar", defUnits, defNodes);
