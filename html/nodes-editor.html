@@ -20,21 +20,21 @@
 <body>
 	<p>Choose strategy:</p>
 	<select>
-		<option onclick="loadStrategy('attacker.json')">Attacker</option>
-		<option onclick="loadStrategy('defender.json')">Defender</option>
+		<option onclick="loadStrategy('attacker.json');">Attacker</option>
+		<option onclick="loadStrategy('defender.json');">Defender</option>
 	</select>
 	<button onclick="saveStrategy()">Save</button>
-	<button onclick="nodeEditor.deleteAll()">Clear</button>
+	<button onclick="nodeEditor.clearAll()">Clear</button>
 
 	<p>Add node:</p>
 	<select>
-		<option onclick="nodeEditor.createNode('root')">Root</option>
-		<option onclick="nodeEditor.createNode('filter')">Filter</option>
-		<option onclick="nodeEditor.createNode('manipulator')">Manipulator</option>
-		<option onclick="nodeEditor.createNode('conditional')">Conditional</option>
-		<option onclick="nodeEditor.createNode('fork')">Fork</option>
-		<option onclick="nodeEditor.createNode('cmdFire')">Cmd Fire</option>
-		<option onclick="nodeEditor.createNode('cmdHold')">Cmd Hold</option>
+		<option onclick="nodeEditor.createNode('root');">Root</option>
+		<option onclick="nodeEditor.createNode('filter');">Filter</option>
+		<option onclick="nodeEditor.createNode('manipulator');">Manipulator</option>
+		<option onclick="nodeEditor.createNode('conditional');">Conditional</option>
+		<option onclick="nodeEditor.createNode('fork');">Fork</option>
+		<option onclick="nodeEditor.createNode('cmdFire');">Cmd Fire</option>
+		<option onclick="nodeEditor.createNode('cmdHold');">Cmd Hold</option>
 	</select>
 
 	<div class="jtk-demo-canvas canvas-wide flowchart-demo jtk-surface jtk-surface-nopan" id="asg-node-container">
@@ -54,16 +54,19 @@
 				dataType : 'json',
 				async: false,
 				url: "/nodes/save",
-				data: { name: stratName, data: nodeEditor.toJson() },
+				data: { name: stratName, nodes: nodeEditor.toJson() },
 				success: function () { alert("Thanks!"); },
 				failure: function() { alert("Error!");}
 			});
 		}
 		function nodeLoader(data) {
+			console.log("Strategy data:");
+			console.log(data);
 			nodeEditor.fromJson(data);
 		}
 		function loadStrategy(name) {
 			stratName = name;
+			console.log(`Loading ${name} strategy...`);
 			$.getJSON("/public/"+stratName, nodeLoader);
 		}
 	</script>

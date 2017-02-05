@@ -27,15 +27,16 @@ class Editor {
 			if (err) return console.error(`Caught an error: ${err} while reading '${filename}' file!`);
 		});
 		this.nodes = Nodes.io.fromJson(text);
+		for (var node of this.nodes) {
+			if (node.id >= this.cntr)
+				this.cntr = node.id + 1;
+		}
 		this.print(`Nodes were loaded from ${filename} successfuly.`);
 		return this.nodes;
 	}
 
 	createNode(name) {
 		var args = [this.cntr].concat(arguments);
-		// for (var i = 1; i < arguments.length; ++i)
-			// args.push(arguments[i]);
-
 		var node = Nodes.factory.createArgs(name, args);
 		if (node == null)
 			return console.error(`Failed to create a node '${name}' with arguments: [${args}]!`);

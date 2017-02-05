@@ -3,6 +3,15 @@
 var nodeFactory = require('./specials').factory;
 
 
+function getNodeById(lst, id) {
+	for (var i = 0; i < lst.length; ++i) {
+		if (lst[i].id == id)
+			return lst[i];
+	}
+	return null;
+}
+
+
 function fromJson(text) {
 	var lst = [];
 	if (text == null)
@@ -10,28 +19,33 @@ function fromJson(text) {
 
 	var data = JSON.parse(text);
 
-	for (var i = 0; i < data.nodes.length; ++i) {
-		var row = data.nodes[i];
-		var node = nodeFactory.create(row.name, i);
-		for (var f in row.ins) {
-			var field = row.ins[f];
+	var i, j;
+	var row, node, field;
+	for (i = 0; i < data.nodes.length; ++i) {
+		row = data.nodes[i];
+		node = nodeFactory.create(row.name, row.id);
+
+		for (j = 0; j < row.inputs.length; ++j) {
+			field = row.inputs[j];
 			node.inputs[field.name].setConstData(field.data);
 		}
+
 		lst.push(node);
 	}
 
-	for (var i = 0; i < data.links.length; ++i) {
-		var row = data.links[i];
-		var parentNode = lst[row.parent];
-		for (var p in row.pairs) {
-			var pair = row.pairs[p];
-			var portName = pair.port;
-			for (var c in pair.children) {
-				var child = pair.children[c];
-				// console.log(`Trying to link ${parentNode.name}.${portName} to ${lst[child.num].name}.${child.port}`);
-				parentNode.link(portName, lst[child.num], child.port);
-			}
+	var k;
+	var parent, pair, port, child;
+	for (i = 0; i < data.links.length; ++i) {
+		row = data.links[i];
+		parent = getNodeById(lst, row.source.id);
+		child = getNodeById(lst, row.target.id);
+
+		if ((parent == null) || (child == null)) {
+			console.error(`Link ${row} is invalid.`);
+			continue;
 		}
+
+		parent.link(row.source.port, child, row.target.port);
 	}
 
 	// console.log(data.nodes);
@@ -41,38 +55,54 @@ function fromJson(text) {
 
 
 function toJson(nodeList) {
-	var data = {'nodes': [], 'links': []};
+	var data = {
+		'nodes': [],
+		'links': []
+	};
+
+	var i, j;
+	var node, row, inputs, field, portData;
 	for (var i = 0; i < nodeList.length; ++i) {
-		var node = nodeList[i];
-		var row = {'id': i, 'name': node.name};
-		var ins = [];
-		for (var field in node.inputs) {
-			var portData = node.inputs[field].data;
+		node = nodeList[i];
+		row = {
+			'id': node.id,
+			'name': node.name,
+			'inputs': []
+		};
+
+		for (field in node.inputs) {
+			portData = node.inputs[field].data;
 			if (portData != null) {
-				ins.push({'name': field, 'data': portData});
+				row.inputs.push({
+					'name': field,
+					'data': portData
+				});
 			}
 		}
-		if (ins.length > 0)
-			row.ins = ins;
+
 		data.nodes.push(row);
 	}
 
-	var links = [];
-	for (var i = 0; i < nodeList.length; ++i) {
-		var node = nodeList[i];
-		var row = {'parent': i, 'pairs': []};
-		for (var name in node.outputs) {
-			var outPort = node.outputs[name];
-			var pair = {'port': name, 'children': []};
-			for (var c in outPort.children) {
-				var child = outPort.children[c];
-				pair.children.push({'port': child.name, 'num': nodeList.indexOf(child.holder)})
+	var j;
+	var port, pair, child, field;
+	for (i = 0; i < nodeList.length; ++i) {
+		node = nodeList[i];
+		for (field in node.outputs) {
+			port = node.outputs[field];
+			for (j = 0; j < port.children.length; ++j) {
+				child = port.children[j];
+				data.links.push({
+					'source': {
+						'id': node.id,
+						'port': port.name
+					},
+					'target': {
+						'id': child.holder.id,
+						'port': child.name
+					}
+				});
 			}
-			if (pair.children.length > 0)
-				row.pairs.push(pair);
 		}
-		if (row.pairs.length > 0)
-			data.links.push(row);
 	}
 
 	// console.log(data.nodes);

@@ -103,15 +103,46 @@ var Node = {
 			}
 		};
 	},
-	Block: function(id, name, inputFields, outputFields) {
+	Block: function(plumb, id, name, inputFields, outputFields) {
 		var inputs = [];
 		var outputs = [];
-		for (var field of inputFields) {
-			inputs.push({ name: field, data: null });
-		}
-		for (var field of outputFields) {
+
+		// Add html block to Node container.
+		var nodeContainer = $("#" + nodesContainerHtmlId);
+		var htmlBlock = $("<div>", {"id": nodesHtmlId + id, "class": "window jtk-node asg-node"});
+		htmlBlock.append("<p>"+name+"</p>");
+		nodeContainer.append(htmlBlock);
+		plumb.setContainer(nodeContainer);
+
+		// Register output Endpoints.
+		var len = inputFields.length + outputFields.length + 1;
+		var offset = 1;
+		var field;
+		for (var i = 0; i < outputFields.length; ++i) {
+			field = outputFields[i];
 			outputs.push({ name: field });
+
+			defaults.sourceProperties.overlays[0][1].label = field;
+			plumb.addEndpoint(nodesHtmlId + id, defaults.sourceProperties, {
+				anchor: [1.0, (i+offset) / len, 0.6, 0],
+				uuid: id + nodesOutSep + field
+			});
 		}
+
+		// Register input Endpoints.
+		offset += outputFields.length;
+		for (var i = 0; i < inputFields.length; ++i) {
+			field = inputFields[i];
+			inputs.push({ name: field, data: null });
+
+			defaults.targetProperties.overlays[0][1].label = field;
+			plumb.addEndpoint(nodesHtmlId + id, defaults.targetProperties, {
+				anchor: [0.0, (i+offset) / len, -0.6, 0],
+				uuid: id + nodesInSep + field
+			});
+		}
+
+		plumb.draggable(htmlBlock, {containment: true});
 		return {
 			id: id,
 			name: name,
@@ -127,39 +158,17 @@ var NodeEditor = function(plumb) {
 		plumb: plumb,
 		nodes: [],
 		links: [],
+		idCntr: 0,
 		createNode: function(name) {
-			var id = this.nodes.length;
-			var node = new Node.Block(id, name, this.cfg[name].inputs, this.cfg[name].outputs);
-
-			var nodeHtml = $("<div>", {"id": nodesHtmlId + node.id, "class": "window jtk-node asg-node"});
-			nodeHtml.append("<p>"+node.name+"</p>");
-			for (var i = 0; i < node.inputs.length; ++i) {
-				// nodeHtml.append("<p>"+node.inputs[i].name+"</p>");
+			if (!this.cfg.hasOwnProperty(name)) {
+				console.error(`Unknown node name: ${name}`);
+				return null;
 			}
 
-			var nodeContainer = $("#" + nodesContainerHtmlId);
-			nodeContainer.append(nodeHtml);
-			this.plumb.setContainer(nodeContainer);
-
-			var len = node.inputs.length + node.outputs.length + 1;
-			for (var i = 0; i < node.outputs.length; ++i) {
-				defaults.sourceProperties.overlays[0][1].label = node.outputs[i].name;
-				plumb.addEndpoint(nodesHtmlId + node.id, defaults.sourceProperties, {
-					anchor: [1.0, (i+1) / len, 0.6, 0],
-					uuid: node.id + nodesOutSep + node.outputs[i].name
-				});
-			}
-			var offset = node.outputs.length + 1;
-			for (var i = 0; i < node.inputs.length; ++i) {
-				defaults.targetProperties.overlays[0][1].label = node.inputs[i].name;
-				plumb.addEndpoint(nodesHtmlId + node.id, defaults.targetProperties, {
-					anchor: [0.0, (i+offset) / len, -0.6, 0],
-					uuid: node.id + nodesInSep + node.inputs[i].name
-				});
-			}
-
-			this.plumb.draggable(nodeHtml, {containment: true});
+			var node = new Node.Block(this.plumb, this.idCntr, name, this.cfg[name].inputs, this.cfg[name].outputs);
 			this.nodes.push(node);
+			++this.idCntr;
+
 			return node;
 		},
 		deleteNode: function(id) {
@@ -184,11 +193,40 @@ var NodeEditor = function(plumb) {
 			$("#" + nodesHtmlId + node.id).remove();
 			return true;
 		},
-		deleteAll() {
-			this.nodes = [];
-			this.links = [];
-			this.plumb.deleteEveryEndpoint();
-			$("#" + nodesContainerHtmlId).empty();
+		indexNode(id) {
+			for (var i = 0; i < this.nodes.length; ++i) {
+				if (this.nodes[i].id == id)
+				return i;
+			}
+			return -1;
+		},
+		createLink(sid, sp, tid, tp) {
+			if ((this.indexNode(sid) == -1)
+					|| (this.indexNode(tid) == -1)) {
+				return false;
+			}
+
+			var lnk = new Node.Link(sid, sp, tid, tp);
+			if (this.indexLink(lnk) != -1) {
+				return false;
+			}
+
+			console.log(`Linking: ${sid}-${sp} --> ${tid}-${tp}`);
+			this.links.push(lnk);
+			return true;
+		},
+		removeLink(sid, sp, tid, tp) {
+			if ((this.indexNode(sid) == -1)
+					|| (this.indexNode(tid) == -1))
+				return false;
+
+			var idx = this.indexLink(new Node.Link(sid, sp, tid, tp));
+			if (idx == -1)
+				return false;
+
+			console.log(`Unlinking: ${sid}-${sp} --> ${tid}-${tp}`);
+			this.links.splice(idx, 1);
+			return true;
 		},
 		indexLink(lnk) {
 			for (var i = 0; i < this.links.length; ++i) {
@@ -197,14 +235,13 @@ var NodeEditor = function(plumb) {
 			}
 			return -1;
 		},
-		indexNode(id) {
-			for (var i = 0; i < this.nodes.length; ++i) {
-				if (this.nodes[i].id == id)
-					return i;
+		appendConnection(connection) {
+			if (!connection.hasOwnProperty('endpoints')) {
+				console.error("Invalid connection (on append):");
+				console.error(connection);
+				return false;
 			}
-			return -1;
-		},
-		makeLink(connection) {
+
 			var input = connection.endpoints[1].getUuid();
 			var output = connection.endpoints[0].getUuid();
 			if ((input == null) || (output == null))
@@ -213,61 +250,71 @@ var NodeEditor = function(plumb) {
 			var ilst = input.split(nodesInSep);
 			var olst = output.split(nodesOutSep);
 
-			if ((this.indexNode(olst[0]) == -1)
-					|| (this.indexNode(ilst[0]) == -1)) {
-				this.plumb.detach(connection);
-				return false;
-			}
-
-			var lnk = new Node.Link(ilst[0], ilst[1], olst[0], olst[1]);
-			if (this.indexLink(lnk) != -1) {
-				this.plumb.detach(connection);
-				return false;
-			}
-
-			console.log(`Linking: ${olst} --> ${ilst}`);
-			this.links.push(lnk);
-			return true;
+			return this.createLink(olst[0], olst[1], ilst[0], ilst[1]);
 		},
-		freeLink(connection) {
+		extractConnection(connection) {
+			if (!connection.hasOwnProperty('endpoints')) {
+				console.error("Invalid connection (on extract):");
+				console.error(connection);
+				return false;
+			}
+
 			var input = connection.endpoints[1].getUuid();
 			var output = connection.endpoints[0].getUuid();
 			if ((input == null) || (output == null))
-				return;
+				return false;
 
 			var ilst = input.split(nodesInSep);
 			var olst = output.split(nodesOutSep);
 
-			if ((this.indexNode(olst[0]) == -1)
-					|| (this.indexNode(ilst[0]) == -1))
-				return false;
-
-			var idx = this.indexLink(new Node.Link(ilst[0], ilst[1], olst[0], olst[1]));
-			if (idx == -1)
-				return false;
-
-			console.log(`Unlinking: ${olst} --> ${ilst}`);
-			this.links.splice(idx, 1);
-			return true;
+			return this.removeLink(olst[0], olst[1], ilst[0], ilst[1]);
 		},
-		detachLink(connection) {
-			var res = this.freeLink(connection);
-			if (res)
+		removeConnection(connection) {
+			if (!connection.hasOwnProperty('endpoints')) {
+				console.error("Invalid connection (on delete):");
+				console.error(connection);
+				return false;
+			}
+
+			var input = connection.endpoints[1].getUuid();
+			var output = connection.endpoints[0].getUuid();
+			if ((input == null) || (output == null))
+				return false;
+
+			var ilst = input.split(nodesInSep);
+			var olst = output.split(nodesOutSep);
+
+			var res = this.removeLink(olst[0], olst[1], ilst[0], ilst[1]);
+			if (res) // if connection was unlinked - stop to draw it.
 				this.plumb.detach(connection);
 
 			return res;
 		},
-		fromJson: function(data) {
-			this.deleteAll();
-
+		clearAll() {
+			this.idCntr = 0;
 			this.nodes = [];
-			for (var node of data.nodes) {
-				this.createNode(node.name)
+			this.links = [];
+			this.plumb.deleteEveryEndpoint();
+			$("#" + nodesContainerHtmlId).empty();
+		},
+		fromJson: function(data) {
+			this.clearAll();
+			if (data == null) {
+				data = {
+					'nodes': [],
+					'links': []
+				};
 			}
 
+			// Create each node.
+			this.nodes = [];
+			for (var node of data.nodes) {
+				this.createNode(node.name);
+			}
+
+			// Draw every connection.
 			this.links = [];
 			for (var link of data.links) {
-				this.links.push(new Node.Link(link.source.id, link.source.port, link.target.id, link.target.port));
 				this.plumb.connect({
 					uuids: [
 						link.source.id + nodesOutSep + link.source.port,
@@ -279,8 +326,8 @@ var NodeEditor = function(plumb) {
 		},
 		toJson: function() {
 			return JSON.stringify({
-				"nodes": this.nodes,
-				"links": this.links
+				'nodes': this.nodes,
+				'links': this.links
 			});
 		}
 	};
@@ -297,13 +344,13 @@ jsPlumb.ready(function () {
 		nodeEditor = new NodeEditor(jpi);
 
 		jpi.bind("connection", function (info, originalEvent) {
-			console.log(nodeEditor.makeLink(info.connection));
+			console.log(nodeEditor.appendConnection(info.connection));
 		});
 		jpi.bind("connectionDrag", function (connection) {
-			console.log(nodeEditor.freeLink(connection));
+			console.log(nodeEditor.extractConnection(connection));
 		});
 		jpi.bind("click", function (connection, originalEvent) {
-			console.log(nodeEditor.detachLink(connection));
+			console.log(nodeEditor.removeConnection(connection));
 		});
 	});
 	// jsPlumb.fire("jsPlumbDemoLoaded", jpi);

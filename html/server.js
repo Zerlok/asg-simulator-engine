@@ -42,7 +42,7 @@ app.get('/nodes/editor', function(request, response) {
 
 
 app.get('/nodes/save', function(request, response) {
-	var name = request.params['name'];
+	var name = request.query['name'];
 	if (name == null) {
 		response.end(JSON.stringify({result: "failure"}));
 		return;
@@ -50,7 +50,7 @@ app.get('/nodes/save', function(request, response) {
 
 	var path = name.split("/");
 	name = path[path.length-1];
-	fs.writeFile("/public/"+name, request.params['data'], function(err) {
+	fs.writeFile(__dirname+"/public/"+name, request.query['nodes'], function(err) {
 		if (err) return console.error(`Caught an error: ${err} while writing into '/public/${name}' file!`);
 	});
 

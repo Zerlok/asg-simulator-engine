@@ -2,6 +2,5 @@ module.exports = {
 	config: require('./config'),
 	units: require('./units'),
 	nodes: require('./nodes'),
-	battle: require('./battle'),
-	simulator: require('./server')
+	battle: require('./battle')
 };
