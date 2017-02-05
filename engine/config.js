@@ -178,7 +178,7 @@ var fields = {
 	createStr: function(name, choices) {
 		return {
 			name: name,
-			type: "string",
+			type: "text",
 			choices: ((choices != null) ? choices : [])
 		};
 	},
@@ -208,8 +208,8 @@ var nodes = {
 	"filter": {
 		inputs: [
 			fields.createUnits(units.name),
-			fields.createStr("side", ["any", units.self, units.enemy]),
-			fields.createStr("type", units.hierarchy),
+			fields.createStr("side", [null, units.self, units.enemy]),
+			fields.createStr("type", [null].concat(units.hierarchy)),
 			fields.createNum("hull"),
 			fields.createNum("shields")
 		],
@@ -218,7 +218,7 @@ var nodes = {
 			fields.createNum("amount")
 		],
 		filterFields: ["type", "hull", "shields"],
-		sideOptions: ["any", units.self, units.enemy]
+		sideOptions: [null, units.self, units.enemy]
 	},
 	"manipulator": {
 		inputs: [

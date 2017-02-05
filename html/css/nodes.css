@@ -12,8 +12,8 @@
     -moz-border-radius: 0.5em;
     border-radius: 0.5em;
     opacity: 0.8;
-    width: 120px;
-    height: 200px;
+    width: 140px;
+    height: 280px;
     cursor: pointer;
     text-align: left;
 	padding-left: 10px;
@@ -27,6 +27,17 @@
     -moz-transition: -moz-box-shadow 0.15s ease-in;
     -o-transition: -o-box-shadow 0.15s ease-in;
     transition: box-shadow 0.15s ease-in;
+}
+
+.node-field-label {
+	text-decoration: none;
+	font-size: 0.7em;
+}
+
+.node-const-value-field {
+	width: 120px;
+	height: 35px;
+	font-size: 0.8em;
 }
 
 .flowchart-demo .active {

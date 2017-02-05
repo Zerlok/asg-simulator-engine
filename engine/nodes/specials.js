@@ -125,12 +125,10 @@ class FilterNode extends Base.Node {
 
 		var side = this.inputs["side"].data;
 		if ((side == null)
-				|| (side == cfg.nodes.filter.sideOptions[0])
 				|| (side == cfg.nodes.filter.sideOptions[1])) {
 			units.data[cfg.units.self] = this.inputs[cfg.units.name].data[cfg.units.self].filter(filterFunc);
 		}
 		if ((side == null)
-				|| (side == cfg.nodes.filter.sideOptions[0])
 				|| (side == cfg.nodes.filter.sideOptions[2])) {
 			units.data[cfg.units.enemy] = this.inputs[cfg.units.name].data[cfg.units.enemy].filter(filterFunc);
 		}
@@ -246,9 +244,7 @@ class FireCmdNode extends Base.Node {
 	}
 
 	_executeSpecial() {
-		console.log("FIRE: ");
 		var targets = this.inputs[cfg.units.name].data[cfg.units.enemy];
-		console.log(targets.length);
 		var len = targets.length;
 		if (len == 0)
 			return;

@@ -31,6 +31,7 @@ class Port {
 
 		this.constant = false;
 		this.children.push(port);
+		port.constant = false;
 		port.parents.push(this);
 		return true;
 	}

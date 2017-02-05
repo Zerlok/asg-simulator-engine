@@ -96,8 +96,8 @@ function simulateBattle(attacker, defender) {
 
 	battle.clear();
 
-	for (var round = 0; round < 2; ++round) {
-	// for (var round = 0; round < maxRounds; ++round) {
+	// for (var round = 0; round < 2; ++round) {
+	for (var round = 0; round < maxRounds; ++round) {
 		active = players[(idx%2)];
 		inactive = players[1 - (idx%2)];
 		active.updateState();

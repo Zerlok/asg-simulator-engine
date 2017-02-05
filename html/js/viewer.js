@@ -4,8 +4,10 @@
 // Nodes Html setup.
 const nodesContainerHtmlId = "asg-node-container";
 const nodesHtmlId = "asg-nodeId";
+const nodesConstInputCls = "node-const-value-field";
 const nodesInSep = "-in-";
 const nodesOutSep = "-out-";
+// const nodesConstValSep = "-const-value-";
 
 // jsPlumb setup.
 var defaults = {
@@ -57,7 +59,7 @@ defaults.sourceProperties = {
 			location: [0.0, 0.5],
 			label: "Source",
 			cssClass: "endpointSourceLabel",
-			visible: true
+			visible: false
 		} ]
 	]
 };
@@ -78,10 +80,22 @@ defaults.targetProperties = {
 			location: [0.0, 0.5],
 			label: "Target",
 			cssClass: "endpointTargetLabel",
-			visible: true
+			visible: false
 		} ]
 	]
 };
+
+
+var Field = function(parent, name) {
+
+	return {
+		name: name,
+		value: null
+	};
+};
+
+
+var ChoiceField = function(name) {};
 
 
 var Node = {
@@ -104,9 +118,6 @@ var Node = {
 		};
 	},
 	Block: function(plumb, id, name, inputFields, outputFields) {
-		var inputs = [];
-		var outputs = [];
-
 		// Add html block to Node container.
 		var nodeContainer = $("#" + nodesContainerHtmlId);
 		var htmlBlock = $("<div>", {"id": nodesHtmlId + id, "class": "window jtk-node asg-node"});
@@ -120,8 +131,6 @@ var Node = {
 		var field;
 		for (var i = 0; i < outputFields.length; ++i) {
 			field = outputFields[i];
-			outputs.push(field);
-
 			defaults.sourceProperties.overlays[0][1].label = field.name;
 			plumb.addEndpoint(nodesHtmlId + id, defaults.sourceProperties, {
 				anchor: [1.0, (i+offset) / len, 0.6, 0],
@@ -133,7 +142,31 @@ var Node = {
 		offset += outputFields.length;
 		for (var i = 0; i < inputFields.length; ++i) {
 			field = inputFields[i];
-			inputs.push({ name: field.name, type: field.type, data: null });
+			if (field.type != "ships") {
+				htmlBlock.append("<label class='node-field-label' for='in-"+field.name+"'>"+field.name+"</label>");
+				if (field.choices.length == 0) {
+					htmlBlock.append($("<input>", {
+						id: field.name,
+						class: nodesConstInputCls,
+						type: "text",
+						name: field.name,
+						value: field.data
+					}));
+				} else {
+					var selector = $("<select>", {
+						id: field.name,
+						class: nodesConstInputCls
+					});
+					for (var choice of field.choices) {
+						if (choice != null) {
+							selector.append("<option value='"+choice+"'>"+choice+"</option>");
+						} else {
+							selector.append("<option value='null'>any</option>");
+						}
+					}
+					htmlBlock.append(selector);
+				}
+			}
 
 			defaults.targetProperties.overlays[0][1].label = field.name;
 			plumb.addEndpoint(nodesHtmlId + id, defaults.targetProperties, {
@@ -146,8 +179,51 @@ var Node = {
 		return {
 			id: id,
 			name: name,
-			inputs: inputs,
-			outputs: outputs
+			enableInput(name) {
+				var nodeHtml = $("div#"+nodesHtmlId+this.id);
+				$.each(nodeHtml.children().filter("."+nodesConstInputCls+"#"+name), function(i, el) {
+					$(el).removeAttr("disabled");
+				});
+			},
+			disableInput(name) {
+				var nodeHtml = $("div#"+nodesHtmlId+this.id);
+				$.each(nodeHtml.children().filter("."+nodesConstInputCls+"#"+name), function(i, el) {
+					$(el).attr("disabled", true);
+					$(el).val(null);
+				});
+			},
+			getValues: function() {
+				var values = [];
+				var nodeHtml = $("div#"+nodesHtmlId+this.id);
+				$.each(nodeHtml.children().filter("input."+nodesConstInputCls), function(i, el) {
+					var val = el.value;
+					values.push({name: el.id, data: (val.length > 0) ? val : null});
+				});
+				$.each(nodeHtml.children().filter("select."+nodesConstInputCls), function(i, el) {
+					var val = $(el).val();
+					values.push({name: el.id, data: (val != "null") ? val : null});
+				});
+				return values;
+			},
+			setValues(values) {
+				var nodeHtml = $("div#"+nodesHtmlId+this.id);
+				$.each(nodeHtml.children().filter("input."+nodesConstInputCls), function(i, el) {
+					for (var pair of values) {
+						if (pair.name == el.id) {
+							el.value = pair.data;
+							return;
+						}
+					}
+				});
+				$.each(nodeHtml.children().filter("select."+nodesConstInputCls), function(i, el) {
+					for (var pair of values) {
+						if (pair.name == el.id) {
+							$(el).val((pair.data != null) ? pair.data : "null");
+							return;
+						}
+					}
+				});
+			}
 		};
 	}
 };
@@ -201,8 +277,9 @@ var NodeEditor = function(plumb) {
 			return -1;
 		},
 		createLink(sid, sp, tid, tp) {
+			var targetIdx = this.indexNode(tid);
 			if ((this.indexNode(sid) == -1)
-					|| (this.indexNode(tid) == -1)) {
+					|| (targetIdx == -1)) {
 				return false;
 			}
 
@@ -213,11 +290,13 @@ var NodeEditor = function(plumb) {
 
 			console.log(`Linking: ${sid}-${sp} --> ${tid}-${tp}`);
 			this.links.push(lnk);
+			this.nodes[targetIdx].disableInput(tp);
 			return true;
 		},
 		removeLink(sid, sp, tid, tp) {
+			var targetIdx = this.indexNode(tid);
 			if ((this.indexNode(sid) == -1)
-					|| (this.indexNode(tid) == -1))
+					|| (targetIdx == -1))
 				return false;
 
 			var idx = this.indexLink(new Node.Link(sid, sp, tid, tp));
@@ -226,6 +305,7 @@ var NodeEditor = function(plumb) {
 
 			console.log(`Unlinking: ${sid}-${sp} --> ${tid}-${tp}`);
 			this.links.splice(idx, 1);
+			this.nodes[targetIdx].enableInput(tp);
 			return true;
 		},
 		indexLink(lnk) {
@@ -308,8 +388,10 @@ var NodeEditor = function(plumb) {
 
 			// Create each node.
 			this.nodes = [];
-			for (var node of data.nodes) {
-				this.createNode(node.name);
+			var node;
+			for (var row of data.nodes) {
+				node = this.createNode(row.name);
+				node.setValues(row.inputs);
 			}
 
 			// Draw every connection.
@@ -325,10 +407,17 @@ var NodeEditor = function(plumb) {
 			}
 		},
 		toJson: function() {
-			return JSON.stringify({
-				'nodes': this.nodes,
-				'links': this.links
-			});
+			var data = {
+				nodes: this.nodes.map(function(node) {
+					return {
+						id: node.id,
+						name: node.name,
+						inputs: node.getValues()
+					};
+				}),
+				links: this.links
+			}
+			return JSON.stringify(data);
 		}
 	};
 };

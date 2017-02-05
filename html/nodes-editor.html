@@ -25,6 +25,7 @@
 	</select>
 	<button onclick="saveStrategy()">Save</button>
 	<button onclick="nodeEditor.clearAll()">Clear</button>
+	<button onclick="gatherAllData()">Data gather</button>
 
 	<p>Add node:</p>
 	<select>
@@ -68,6 +69,10 @@
 			stratName = name;
 			console.log(`Loading ${name} strategy...`);
 			$.getJSON("/public/"+stratName, nodeLoader);
+		}
+
+		function gatherAllData() {
+			console.log(nodeEditor.nodes[0].getValues());
 		}
 	</script>
 	<script src="/static/js/viewer.js"></script>
