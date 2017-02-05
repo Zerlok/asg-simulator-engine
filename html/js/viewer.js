@@ -120,12 +120,12 @@ var Node = {
 		var field;
 		for (var i = 0; i < outputFields.length; ++i) {
 			field = outputFields[i];
-			outputs.push({ name: field });
+			outputs.push(field);
 
-			defaults.sourceProperties.overlays[0][1].label = field;
+			defaults.sourceProperties.overlays[0][1].label = field.name;
 			plumb.addEndpoint(nodesHtmlId + id, defaults.sourceProperties, {
 				anchor: [1.0, (i+offset) / len, 0.6, 0],
-				uuid: id + nodesOutSep + field
+				uuid: id + nodesOutSep + field.name
 			});
 		}
 
@@ -133,12 +133,12 @@ var Node = {
 		offset += outputFields.length;
 		for (var i = 0; i < inputFields.length; ++i) {
 			field = inputFields[i];
-			inputs.push({ name: field, data: null });
+			inputs.push({ name: field.name, type: field.type, data: null });
 
-			defaults.targetProperties.overlays[0][1].label = field;
+			defaults.targetProperties.overlays[0][1].label = field.name;
 			plumb.addEndpoint(nodesHtmlId + id, defaults.targetProperties, {
 				anchor: [0.0, (i+offset) / len, -0.6, 0],
-				uuid: id + nodesInSep + field
+				uuid: id + nodesInSep + field.name
 			});
 		}
 

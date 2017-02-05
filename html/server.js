@@ -82,20 +82,20 @@ app.get('/nodes/save', function(request, response) {
 app.get('/battle', function(request, response) {
 	var attUnits = Units.builder.total(Funcs.rand(256, 512));
 	var defUnits = Units.builder.total(Funcs.rand(256, 512));
-	var attNodes = ed.load("./public/attacker.json");
-	var defNodes = ed.load("./public/defender.json");
+	var attNodes = ed.load(__dirname+"/public/attacker.json");
+	var defNodes = ed.load(__dirname+"/public/defender.json");
 
 	var attacker = new Battle.Player("Foo", attUnits, attNodes);
 	var defender = new Battle.Player("Bar", defUnits, defNodes);
 
-	logger.log(`Attacker: units(${attacker.units.current.length}) ==> ${attacker.score}`);
-	logger.log(`Defender: units(${defender.units.current.length}) ==> ${defender.score}`);
+	// logger.log(`Attacker: units(${attacker.units.current.length}) ==> ${attacker.score}`);
+	// logger.log(`Defender: units(${defender.units.current.length}) ==> ${defender.score}`);
 
 	Battle.simulate(attacker, defender);
 
-	logger.log(`Battle simulation (${attacker.name} vs ${defender.name}) was finished.`);
-	logger.log(`Attacker: units(${attacker.units.current.length}) ==> ${attacker.score}`);
-	logger.log(`Defender: units(${defender.units.current.length}) ==> ${defender.score}`);
+	// logger.log(`Battle simulation (${attacker.name} vs ${defender.name}) was finished.`);
+	// logger.log(`Attacker: units(${attacker.units.current.length}) ==> ${attacker.score}`);
+	// logger.log(`Defender: units(${defender.units.current.length}) ==> ${defender.score}`);
 
 	response.setHeader('Content-Type', 'application/json');
 	response.end(JSON.stringify({

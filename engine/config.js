@@ -84,7 +84,7 @@ const battle = {
 		finished: titles.battle.states[2]
 	},
 	results: titles.battle.results,
-	maxRounds: 8
+	maxRounds: 128
 };
 
 
@@ -154,43 +154,122 @@ var units = {
 
 // ------------------------------ NODES CONFIG ------------------------------ //
 
+var fields = {
+	types: {
+		units: units.name,
+		num: "number",
+		str: "string",
+		func: "function"
+	},
+	createUnits: function(name, choices) {
+		return {
+			name: name,
+			type: units.name,
+			choices: []
+		}
+	},
+	createNum: function(name, choices) {
+		return {
+			name: name,
+			type: "number",
+			choices: ((choices != null) ? choices : [])
+		};
+	},
+	createStr: function(name, choices) {
+		return {
+			name: name,
+			type: "string",
+			choices: ((choices != null) ? choices : [])
+		};
+	},
+	createFunc: function(name, choices) {
+		return {
+			name: name,
+			type: "function",
+			choices: choices
+		};
+	}
+};
+
 var nodes = {
 	main: titles.nodes.names[0],
-	unitsField: units.name,
-	defaultFields: [
-		units.name,
-		"round",
-		"deals"
-	],
+	fields: fields,
 	types: titles.nodes.types,
 	names: titles.nodes.names,
 
+	// For browser Node View.
 	"root": {
 		inputs: [],
-		outputs: [ units.name, "round" ]
+		outputs: [
+			fields.createUnits(units.name),
+			fields.createNum("round")
+		]
 	},
 	"filter": {
-		inputs: [ units.name, "side", "type", "hull", "shields"],
-		outputs: [ units.name ]
+		inputs: [
+			fields.createUnits(units.name),
+			fields.createStr("side", ["any", units.self, units.enemy]),
+			fields.createStr("type", units.hierarchy),
+			fields.createNum("hull"),
+			fields.createNum("shields")
+		],
+		outputs: [
+			fields.createUnits(units.name),
+			fields.createNum("amount")
+		],
+		filterFields: ["type", "hull", "shields"],
+		sideOptions: ["any", units.self, units.enemy]
 	},
 	"manipulator": {
-		inputs: ["leftSet", "rightSet", "operator"],
-		outputs: ["resultSet"]
+		inputs: [
+			fields.createUnits("leftSet"),
+			fields.createUnits("rightSet"),
+			fields.createFunc(
+				"operation",
+				["intersection", "union", "difference"]
+			)
+		],
+		outputs: [
+			fields.createUnits("resultSet"),
+			fields.createNum("amount")
+		],
 	},
 	"conditional": {
-		inputs: ["leftValue", "rightValue", "operator"],
-		outputs: ["resultValue"]
+		inputs: [
+			fields.createNum("leftValue"),
+			fields.createNum("rightValue"),
+			fields.createFunc(
+				"operator",
+				["eq", "ne", "lt", "le", "gt", "ge", "and", "or", "xor"]
+			)
+		],
+		outputs: [
+			fields.createNum("resultValue")
+		],
 	},
 	"fork": {
-		inputs: [ units.name, "round", "result" ],
-		outputs: [ "onTrue_"+units.name, "onTrue_round", "onFalse_"+units.name, "onFalse_round" ]
+		inputs: [
+			fields.createUnits(units.name),
+			fields.createNum("round"),
+			fields.createNum("result"),
+		],
+		outputs: [
+			fields.createUnits("onTrue_"+units.name),
+			fields.createNum("onTrue_round"),
+			fields.createUnits("onFalse_"+units.name),
+			fields.createNum("onFalse_round")
+		],
+		separator: "_",
+		trueFieldName: "onTrue",
+		falseFieldName: "onFalse",
+		outputFields: [units.name, "round"]
 	},
 	"cmdFire": {
-		inputs: [ units.name ],
+		inputs: [ fields.createUnits(units.name) ],
 		outputs: []
 	},
 	"cmdHold": {
-		inputs: [ units.name ],
+		inputs: [ fields.createUnits(units.name) ],
 		outputs: []
 	}
 };

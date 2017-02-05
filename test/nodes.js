@@ -9,13 +9,17 @@ var neditor = new Engine.nodes.Editor();
 var nodes = neditor.nodes;
 var nodesTree, parsedNodes;
 
+
 const unitsLen = 5;
-var units = {own: [], enemies: []};
-for (var type in Engine.units.config.types) {
-	for (var i = 0; i < unitsLen; ++i) {
-		units.own.push(new Engine.units.Unit(type));
-		units.enemies.push(new Engine.units.Unit(type));
+var initUnits = function() {
+	var units = {own: [], enemies: []};
+	for (var type in Engine.units.config.types) {
+		for (var i = 0; i < unitsLen; ++i) {
+			units.own.push(new Engine.units.Unit(type));
+			units.enemies.push(new Engine.units.Unit(type));
+		}
 	}
+	return units;
 }
 
 
@@ -23,7 +27,8 @@ for (var type in Engine.units.config.types) {
 
 describe("Nodes custom executions:", function() {
 	it("Root execution", function() {
-		var node = new Engine.nodes.Root(0, 'node');
+		var units = initUnits();
+		var node = new Engine.nodes.Root(0);
 		expect(node.isReady()).to.be.false;
 
 		node.initData(units.own, units.enemies, 4, "nothing");
@@ -36,8 +41,9 @@ describe("Nodes custom executions:", function() {
 	});
 
 	it("Filter execution", function() {
+		var units = initUnits();
 		var node, filtered;
-		node = new Engine.nodes.Filter(0, 'node');
+		node = new Engine.nodes.Filter(0);
 		expect(node.isReady()).to.be.false;
 
 		node.inputs.ships.setConstData(units);
@@ -51,22 +57,25 @@ describe("Nodes custom executions:", function() {
 		};
 		node.execute();
 		expect(node.outputs.ships.data).to.eql(filtered);
+		expect(node.outputs.amount.data).to.equal(filtered.own.length + filtered.enemies.length);
 
-		node = new Engine.nodes.Filter(0, 'node');
+		node = new Engine.nodes.Filter(0);
 		node.inputs.ships.setConstData(units);
 		node.inputs.side.setConstData("enemies");
 		node.inputs.hull.setConstData({'op': 'lt', 'value': 200});
 		filtered = {
 			own: [],
-			enemies: units.enemies.filter(function(x){ if (x.hull < 200) return x; })
+			enemies: units.enemies.filter(function(x) { if (x.hull < 200) { return x; } })
 		}
 		node.execute();
 		expect(node.outputs.ships.data).to.eql(filtered);
+		expect(node.outputs.amount.data).to.equal(filtered.enemies.length);
 	});
 
 	it("Manipulator execution", function() {
+		var units = initUnits();
 		var node;
-		node = new Engine.nodes.Manipulator(0, 'node');
+		node = new Engine.nodes.Manipulator(0);
 		expect(node.isReady()).to.be.false;
 
 		node.inputs.leftSet.setConstData({own: units.own, enemies: []});
@@ -74,15 +83,18 @@ describe("Nodes custom executions:", function() {
 		node.inputs.operation.setConstData('union');
 		node.execute();
 		expect(node.outputs.resultSet.data).to.eql(units);
+		expect(node.outputs.amount.data).to.equal(units.own.length + units.enemies.length);
 
 		node.inputs.operation.setConstData('intersection');
 		node.execute();
 		expect(node.outputs.resultSet.data).to.eql({own: [], enemies: []});
+		expect(node.outputs.amount.data).to.equal(0);
 	});
 
 	it("Conditional execution", function() {
+		var units = initUnits();
 		var node;
-		node = new Engine.nodes.Conditional(0, 'node');
+		node = new Engine.nodes.Conditional(0);
 		node.inputs.leftValue.setConstData(units.own);
 		node.inputs.rightValue.setConstData(200);
 
@@ -101,8 +113,9 @@ describe("Nodes custom executions:", function() {
 	});
 
 	it("Fork execution", function() {
+		var units = initUnits();
 		var node;
-		node = new Engine.nodes.Fork(0, 'node');
+		node = new Engine.nodes.Fork(0);
 		node.inputs.ships.setConstData(units);
 
 		expect(node.onTrue.ships.data).to.be.null;
@@ -120,7 +133,8 @@ describe("Nodes custom executions:", function() {
 	});
 
 	it("FireCmd execution", function() {
-		var node = new Engine.nodes.CmdFire(0, 'node');
+		var units = initUnits();
+		var node = new Engine.nodes.CmdFire(0);
 		node.inputs.ships.setConstData(units);
 
 		var pointsFunc = function(unit){ return unit.hull + unit.shields; };
@@ -141,7 +155,8 @@ describe("Nodes custom executions:", function() {
 	});
 
 	it("HoldCmd execution", function() {
-		var node = new Engine.nodes.CmdHold(0, 'node');
+		var units = initUnits();
+		var node = new Engine.nodes.CmdHold(0);
 		node.inputs.ships.setConstData(units);
 
 		var shieldFunc = function(unit){ return unit.shields; };
@@ -239,8 +254,8 @@ describe("Strategy editing and execution:", function() {
 		expect(nodes[9].isParentOf(nodes[10])).to.be.false;
 		expect(nodes[9].isParentOf(nodes[11])).to.be.false;
 
-		neditor.link(5, 'ships', 7, 'leftValue');
-		neditor.link(6, 'ships', 7, 'rightValue');
+		neditor.link(5, 'amount', 7, 'leftValue');
+		neditor.link(6, 'amount', 7, 'rightValue');
 		neditor.link(7, 'resultValue', 9, 'result');
 		neditor.link(5, 'ships', 8, 'leftSet');
 		neditor.link(6, 'ships', 8, 'rightSet');
@@ -290,7 +305,7 @@ describe("Strategy editing and execution:", function() {
 		expect(Engine.nodes.base.isCircular(nodes[0])).to.be.false;
 
 		// Check custom graphs.
-		var vertex = function() { return new Engine.nodes.base.Node(0, 'vertex', 'vertex', ['foo'], ['bar']); };
+		var vertex = function() { return new Engine.nodes.base.Node(0, 'vertex', 'vertex', [{name: 'foo', type: 0}], [{name: 'bar', type: 0}]); };
 		var N = 20;
 		var graph = [vertex()];
 		for (var i = 0; i < N; ++i) {
@@ -375,6 +390,7 @@ describe("Strategy editing and execution:", function() {
 	});
 
 	it("Data passes from parent nodes to child nodes", function() {
+		var units = initUnits();
 		nodes[0].initData(units.own, units.enemies, 1);
 		var children = nodes[0].getChildren()
 		for (var child of children) {

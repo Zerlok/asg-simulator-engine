@@ -6,9 +6,10 @@ var cfg = require('../config').engine;
 
 
 class Port {
-	constructor(id, name, holder) {
+	constructor(id, field, holder) {
 		this.id = id;
-		this.name = name;
+		this.name = field.name;
+		this.type = field.type;
 		this.holder = holder;
 		this.data = null;
 		this.empty = true;
@@ -22,50 +23,61 @@ class Port {
 	}
 
 	link(port) {
-		if ((port == null) || (port == this) || this.isLinked(port))
-			return;
+		if ((port == null)
+				|| (port == this)
+				|| (port.type != this.type)
+				|| this.isLinked(port))
+			return false;
 
 		this.constant = false;
 		this.children.push(port);
 		port.parents.push(this);
+		return true;
 	}
 
 	unlink(port) {
-		if ((port == null) || (port == this) || !this.isLinked(port))
-			return;
+		if ((port == null)
+				|| (port == this)
+				|| !this.isLinked(port))
+			return false;
 
 		this.children.splice(this.children.indexOf(port), 1);
 		port.parents.splice(port.parents.indexOf(this), 1);
+		return true;
 	}
 
 	clean() {
 		if (this.constant)
-			return;
+			return false;
 
 		this.data = null;
 		this.empty = true;
+		return true;
 	}
 
 	setConstData(value) {
 		this.data = value;
-		this.empty = false;
-		this.constant = true;
+		this.empty = (value == null);
+		this.constant = (value != null);
 	}
 
 	receiveData(data) {
-		if (this.empty && !this.constant) {
-			this.data = data;
-			this.empty = false;
-		}
+		if (!this.empty || this.constant)
+			return false;
+
+		this.data = data;
+		this.empty = (data == null);
+		return true;
 	}
 
 	pushData() {
 		if (this.data == null)
-			return;
+			return false;
 
 		for (var i = 0; i < this.children.length; ++i) {
 			this.children[i].receiveData(this.data);
 		}
+		return true;
 	}
 }
 
@@ -78,15 +90,18 @@ class Node {
 		this.inputs = {};
 		this.outputs = {};
 
-		for (var i in inFields) {
+		var i;
+		for (i = 0; i < inFields.length; ++i) {
 			var field = inFields[i];
-			this.inputs[field] = new Port(i, field, this);
+			this.inputs[field.name] = new Port(i, field, this);
 		}
-		for (var i in outFields) {
+		for (i = 0; i < outFields.length; ++i) {
 			var field = outFields[i];
-			this.outputs[field] = new Port(i, field, this);
+			this.outputs[field.name] = new Port(i, field, this);
 		}
 		// console.log(`<Node:${id}:${name} (ins: [${inFields}], outs: [${outFields}])> created.`);
+		// console.log(this.inputs);
+		// console.log(this.outputs);
 	}
 
 	isReady() {
@@ -127,31 +142,21 @@ class Node {
 	}
 
 	getInPort(port) {
-		var type = typeof port;
-		var keys = Object.keys(this.inputs);
-
-		if ((type == "number") && (port < keys.length)) {
-			return this.inputs[keys[port]];
-		} else if ((type == "string") && this.inputs.hasOwnProperty(port)) {
-			return	this.inputs[port];
+		if (!this.inputs.hasOwnProperty(port)) {
+			console.error(`${this.name} node has not '${port}' input port!`);
+			return null;
 		}
 
-		console.error(`${this.name} node has not '${port}' input port!`);
-		return null;
+		return	this.inputs[port];
 	}
 
 	getOutPort(port) {
-		var type = typeof port;
-		var keys = Object.keys(this.outputs);
-
-		if ((type == "number") && (port < keys.length)) {
-			return this.outputs[keys[port]];
-		} else if ((type == "string") && this.outputs.hasOwnProperty(port)) {
-			return	this.outputs[port];
+		if (!this.outputs.hasOwnProperty(port)) {
+			console.error(`${this.name} node has not '${port}' output port!`);
+			return null;
 		}
 
-		console.error(`${this.name} node has not '${port}' output port!`);
-		return null;
+		return	this.outputs[port];
 	}
 
 	getValues() {
@@ -214,8 +219,7 @@ class Node {
 				|| (outPort.isLinked(inPort)))
 			return false;
 
-		outPort.link(inPort);
-		return true;
+		return outPort.link(inPort);
 	}
 
 	unlink(o, node, i) {
@@ -229,8 +233,7 @@ class Node {
 				|| (!outPort.isLinked(inPort)))
 			return false;
 
-		outPort.unlink(inPort);
-		return true;
+		return outPort.unlink(inPort);
 	}
 
 	setValue(field, value) {

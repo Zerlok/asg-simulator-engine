@@ -40,6 +40,6 @@ function createStrategy(filename) {
 
 // createStrategy(filename);
 // ed.save(filename);
-ed.load(filename);
+// ed.load(filename);
 console.log('-------------------------------------------------------------------');
 ed.showNodes();

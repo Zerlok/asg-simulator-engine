@@ -9,7 +9,13 @@ var cfg = require('../config').engine;
 
 class RootNode extends Base.Node {
 	constructor(id) {
-		super(id, cfg.nodes.names[0], cfg.nodes.types[0], cfg.nodes.defaultFields, cfg.nodes.defaultFields);
+		super(
+			id,
+			cfg.nodes.names[0],
+			cfg.nodes.types[0],
+			cfg.nodes.root.outputs, // for simulator only!
+			cfg.nodes.root.outputs
+		);
 	}
 
 	initData(selfUnits, enemyUnits, roundNum) {
@@ -18,7 +24,6 @@ class RootNode extends Base.Node {
 				enemies: enemyUnits
 		});
 		this.inputs.round.setConstData(roundNum);
-		this.inputs.deals.setConstData(0);
 	}
 
 	_executeSpecial() {
@@ -30,23 +35,21 @@ class RootNode extends Base.Node {
 
 class FilterNode extends Base.Node {
 	constructor(id) {
-		const sideFilter = {
-			name: "side",
-			options: ["any", cfg.units.self, cfg.units.enemy]
-		};
-		const unitsFilter = ['type', 'hull'];
-
-		super(id, cfg.nodes.names[1], cfg.nodes.types[1], [cfg.units.name, sideFilter.name].concat(unitsFilter), [cfg.units.name]);
-		this.sideFilter = sideFilter;
-		this.unitsFilter = unitsFilter;
+		super(
+			id,
+			cfg.nodes.names[1],
+			cfg.nodes.types[1],
+			cfg.nodes.filter.inputs,
+			cfg.nodes.filter.outputs
+		);
 	}
 
 	isReady() {
 		var unitsPort = this.inputs[cfg.units.name];
-		if (unitsPort.empty || (unitsPort.data == null))
+		if (unitsPort.empty)
 			return false;
 
-		for (var name of this.unitsFilter) {
+		for (var name of cfg.nodes.filter.filterFields) {
 			var inPort = this.inputs[name];
 			if (!inPort.empty)
 				return true;
@@ -78,7 +81,7 @@ class FilterNode extends Base.Node {
 
 		var lst = [];
 		var data, type, crit;
-		for (var name of this.unitsFilter) {
+		for (var name of cfg.nodes.filter.filterFields) {
 			data = this.inputs[name].data;
 			type = typeof data;
 			if (data != null) {
@@ -107,9 +110,11 @@ class FilterNode extends Base.Node {
 		// TODO: make byPosition criteria be an area (horizontal and vertical ranges).
 		var criterias = this.getCriterias();
 		var filterFunc = function(unit) {
-			for (var i = 0; i < criterias.length; ++i)
-				if (!criterias[i].validate(unit))
+			for (var i = 0; i < criterias.length; ++i) {
+				if (!criterias[i].validate(unit)) {
 					return null;
+				}
+			}
 			return unit;
 		};
 
@@ -118,23 +123,30 @@ class FilterNode extends Base.Node {
 		units.data[cfg.units.self] = [];
 		units.data[cfg.units.enemy] = [];
 
-		var side = this.inputs[this.sideFilter.name].data;
+		var side = this.inputs["side"].data;
 		if ((side == null)
-				|| (side == this.sideFilter.options[0])
-				|| (side == this.sideFilter.options[1])) {
+				|| (side == cfg.nodes.filter.sideOptions[0])
+				|| (side == cfg.nodes.filter.sideOptions[1])) {
 			units.data[cfg.units.self] = this.inputs[cfg.units.name].data[cfg.units.self].filter(filterFunc);
 		}
 		if ((side == null)
-				|| (side == this.sideFilter.options[0])
-				|| (side == this.sideFilter.options[2])) {
+				|| (side == cfg.nodes.filter.sideOptions[0])
+				|| (side == cfg.nodes.filter.sideOptions[2])) {
 			units.data[cfg.units.enemy] = this.inputs[cfg.units.name].data[cfg.units.enemy].filter(filterFunc);
 		}
+		this.outputs.amount.data = units.data[cfg.units.self].length + units.data[cfg.units.enemy].length;
 	}
 }
 
 class ManipulatorNode extends Base.Node {
 	constructor(id) {
-		super(id, cfg.nodes.names[2], cfg.nodes.types[1], ['leftSet', 'rightSet', 'operation'], ['resultSet']);
+		super(
+			id,
+			cfg.nodes.names[2],
+			cfg.nodes.types[1],
+			cfg.nodes.manipulator.inputs,
+			cfg.nodes.manipulator.outputs
+		);
 	}
 
 	_executeSpecial() {
@@ -146,12 +158,19 @@ class ManipulatorNode extends Base.Node {
 		this.outputs.resultSet.data = {};
 		this.outputs.resultSet.data[cfg.units.self] = op(this.inputs.leftSet.data[cfg.units.self], this.inputs.rightSet.data[cfg.units.self]);
 		this.outputs.resultSet.data[cfg.units.enemy] = op(this.inputs.leftSet.data[cfg.units.enemy], this.inputs.rightSet.data[cfg.units.enemy]);
+		this.outputs.amount.data = this.outputs.resultSet.data[cfg.units.self].length + this.outputs.resultSet.data[cfg.units.enemy].length;
 	}
 }
 
 class ConditionalNode extends Base.Node {
 	constructor(id) {
-		super(id, cfg.nodes.names[3], cfg.nodes.types[1], ['leftValue', 'rightValue', 'operator'], ['resultValue']);
+		super(
+			id,
+			cfg.nodes.names[3],
+			cfg.nodes.types[1],
+			cfg.nodes.conditional.inputs,
+			cfg.nodes.conditional.outputs
+		);
 	}
 
 	_executeSpecial() {
@@ -167,26 +186,19 @@ class ConditionalNode extends Base.Node {
 
 class ForkNode extends Base.Node {
 	constructor(id) {
-		const sep = "_";
-		const trueFieldName = "onTrue";
-		const falseFieldName = "onFalse";
-		var inputsNames = ['result'].concat(cfg.nodes.defaultFields);
-		var outputsNames = [];
-		for (var field of inputsNames) {
-			outputsNames.push(trueFieldName+sep+field);
-			outputsNames.push(falseFieldName+sep+field);
-		}
+		super(
+			id,
+			cfg.nodes.names[4],
+			cfg.nodes.types[1],
+			cfg.nodes.fork.inputs,
+			cfg.nodes.fork.outputs
+		);
 
-		super(id, cfg.nodes.names[4], cfg.nodes.types[1], inputsNames, outputsNames);
-		this.inputsNames = inputsNames;
-		this.trueFieldName = trueFieldName;
-		this.falseFieldName = falseFieldName;
-
-		this[trueFieldName] = {};
-		this[falseFieldName] = {};
-		for (var field of inputsNames) {
-			this[trueFieldName][field] = this.outputs[trueFieldName+sep+field];
-			this[falseFieldName][field] = this.outputs[falseFieldName+sep+field];
+		this[cfg.nodes.fork.trueFieldName] = {};
+		this[cfg.nodes.fork.falseFieldName] = {};
+		for (var name of cfg.nodes.fork.outputFields) {
+			this[cfg.nodes.fork.trueFieldName][name] = this.outputs[cfg.nodes.fork.trueFieldName + cfg.nodes.fork.separator + name];
+			this[cfg.nodes.fork.falseFieldName][name] = this.outputs[cfg.nodes.fork.falseFieldName + cfg.nodes.fork.separator + name];
 		}
 	}
 
@@ -196,15 +208,15 @@ class ForkNode extends Base.Node {
 
 	getOutput(field) {
 		if (this.inputs.result.data) {
-			return this[this.trueFieldName][field];
+			return this[cfg.nodes.fork.trueFieldName][field];
 		} else {
-			return this[this.falseFieldName][field];
+			return this[cfg.nodes.fork.falseFieldName][field];
 		}
 	}
 
 	_executeSpecial() {
 		this.refreshOutputs();
-		for (var name of this.inputsNames) {
+		for (var name of cfg.nodes.fork.outputFields) {
 			this.getOutput(name).data = this.inputs[name].data;
 		}
 	}
@@ -215,7 +227,13 @@ class ForkNode extends Base.Node {
 
 class FireCmdNode extends Base.Node {
 	constructor(id) {
-		super(id, cfg.nodes.names[5], cfg.nodes.types[2], [cfg.units.name], []);
+		super(
+			id,
+			cfg.nodes.names[5],
+			cfg.nodes.types[2],
+			cfg.nodes.cmdFire.inputs,
+			cfg.nodes.cmdFire.outputs
+		);
 	}
 
 	setValue(field, value) {
@@ -228,7 +246,9 @@ class FireCmdNode extends Base.Node {
 	}
 
 	_executeSpecial() {
+		console.log("FIRE: ");
 		var targets = this.inputs[cfg.units.name].data[cfg.units.enemy];
+		console.log(targets.length);
 		var len = targets.length;
 		if (len == 0)
 			return;
@@ -251,7 +271,13 @@ class FireCmdNode extends Base.Node {
 
 class HoldCmdNode extends Base.Node {
 	constructor(id) {
-		super(id, cfg.nodes.names[6], cfg.nodes.types[2], [cfg.units.name], []);
+		super(
+			id,
+			cfg.nodes.names[6],
+			cfg.nodes.types[2],
+			cfg.nodes.cmdHold.inputs,
+			cfg.nodes.cmdHold.outputs
+		);
 	}
 
 	setValue(field, value) {
