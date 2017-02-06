@@ -128,8 +128,6 @@ var Node = {
 
 		// Register input Endpoints.
 		var innerBlock = $("<div>", {class: "node-in-ports"});
-		// offset -= ostep;
-		// offset += ostep;
 		for (var i = 0; i < inputFields.length; ++i) {
 			field = inputFields[i];
 			var label = $("<p class='node-in-field-label'>"+field.name+"</p>");
@@ -178,31 +176,34 @@ var Node = {
 			name: name,
 			htmlBlock: htmlBlock,
 			enableInput(name) {
-				var nodeHtml = $("div#"+nodesHtmlId+this.id);
-				$.each(this.htmlBlock.children().filter("."+nodesConstInputCls+"#"+name), function(i, el) {
+				var inner = this.htmlBlock.children().filter(".node-in-ports");
+				$.each(inner.children().filter("."+nodesConstInputCls+"#"+name), function(i, el) {
 					$(el).removeAttr("disabled");
 				});
 			},
 			disableInput(name) {
-				$.each(this.htmlBlock.children().filter("."+nodesConstInputCls+"#"+name), function(i, el) {
+				var inner = this.htmlBlock.children().filter(".node-in-ports");
+				$.each(inner.children().filter("."+nodesConstInputCls+"#"+name), function(i, el) {
 					$(el).attr("disabled", true);
 					$(el).val(null);
 				});
 			},
 			getValues: function() {
 				var values = [];
-				$.each(this.htmlBlock.children().filter("input."+nodesConstInputCls), function(i, el) {
+				var inner = this.htmlBlock.children().filter(".node-in-ports");
+				$.each(inner.children().filter("input."+nodesConstInputCls), function(i, el) {
 					var val = el.value;
 					values.push({name: el.id, data: (val.length > 0) ? val : null});
 				});
-				$.each(this.htmlBlock.children().filter("select."+nodesConstInputCls), function(i, el) {
+				$.each(inner.children().filter("select."+nodesConstInputCls), function(i, el) {
 					var val = $(el).val();
 					values.push({name: el.id, data: (val != "null") ? val : null});
 				});
 				return values;
 			},
 			setValues(values) {
-				$.each(this.htmlBlock.children().filter("input."+nodesConstInputCls), function(i, el) {
+				var inner = this.htmlBlock.children().filter(".node-in-ports");
+				$.each(inner.children().filter("input."+nodesConstInputCls), function(i, el) {
 					for (var pair of values) {
 						if (pair.name == el.id) {
 							el.value = pair.data;
@@ -210,7 +211,7 @@ var Node = {
 						}
 					}
 				});
-				$.each(this.htmlBlock.children().filter("select."+nodesConstInputCls), function(i, el) {
+				$.each(inner.children().filter("select."+nodesConstInputCls), function(i, el) {
 					for (var pair of values) {
 						if (pair.name == el.id) {
 							$(el).val((pair.data != null) ? pair.data : "null");
