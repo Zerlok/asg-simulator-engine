@@ -48,13 +48,8 @@
 	</div>
 
 	<script>
-		$.getJSON("/nodes/config", function(data) {
-			nodeEditor.cfg = data;
-		});
-
 		var stratName;
 		function saveStrategy() {
-			// TODO: save
 			$.ajax({
 				type: "GET",
 				dataType : 'json',
@@ -75,7 +70,10 @@
 			console.log(`Loading ${name} strategy...`);
 			$.getJSON("/public/"+stratName, nodeLoader);
 		}
+
+		var module = { exports: {} };
 	</script>
+	<script src="/nodes/cfg.js"></script>
 	<script src="/static/js/viewer.js"></script>
 
 </body>

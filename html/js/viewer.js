@@ -229,12 +229,18 @@ var Node = {
 
 var NodeEditor = function(plumb) {
 	return {
-		cfg: {},
+		ready: true,
+		cfg: nodes,
 		plumb: plumb,
 		nodes: [],
 		links: [],
 		idCntr: 0,
 		createNode: function(name, pos) {
+			if (!this.ready) {
+				alert("Sorry, cfg hasn't been loaded yet!");
+				return;
+			}
+
 			if (!this.cfg.hasOwnProperty(name)) {
 				console.error(`Unknown node name: ${name}`);
 				return null;

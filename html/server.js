@@ -30,6 +30,13 @@ app.get('/', function (request, response) {
 });
 
 
+app.get('/nodes/cfg.js', function(request, response) {
+	// response.end(JSON.stringify(config.engine.nodes));
+	response.setHeader('Content-Type', 'application/js');
+	response.sendFile("/home/zerlok/dev/web/asg/asg_engine/engine/config.js");
+});
+
+
 app.get('/nodes/config', function(request, response) {
 	response.setHeader('Content-Type', 'application/json');
 	response.end(JSON.stringify(config.engine.nodes));
@@ -119,7 +126,7 @@ app.get('/battle', function(request, response) {
 });
 
 
-var server = app.listen(config.app.port, function () {
+var server = app.listen(config.app.port, config.app.host, function () {
 	var host = server.address().address;
 	var port = server.address().port;
 

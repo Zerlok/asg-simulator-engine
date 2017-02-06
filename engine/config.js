@@ -284,8 +284,8 @@ module.exports = {
 		fullname: titles.app.fullname,
 		name: titles.app.shortappname,
 		version: version,
-		host: "localhost",
-		port: 8000
+		host: "192.168.0.200",
+		port: 6060
 	},
 
 	engine: {
