@@ -1,60 +1,113 @@
-.demo {
-    /* for IE10+ touch devices */
-    touch-action: none;
+.nodes-chart {
+	background-color: white;
+	height: 800px;
+	max-height: 1400px;
+	border: 1px solid #CCC;
 }
 
-.flowchart-demo .window {
-    border: 1px solid #346789;
-    box-shadow: 2px 2px 19px #aaa;
-    -o-box-shadow: 2px 2px 19px #aaa;
-    -webkit-box-shadow: 2px 2px 19px #aaa;
-    -moz-box-shadow: 2px 2px 19px #aaa;
-    -moz-border-radius: 0.5em;
-    border-radius: 0.5em;
-    opacity: 0.8;
-    width: 140px;
-    height: 280px;
-    cursor: pointer;
-    text-align: left;
+.node-block {
+	border: 1px solid #004595;
+	border-radius: 0.5em;
+	opacity: 0.95;
+	width: 140px;
+	height: 180px;
+	cursor: pointer;
+	text-align: left;
 	padding-left: 10px;
-    z-index: 15;
-    position: absolute;
-    background-color: #eeeeef;
-    color: black;
-    font-family: helvetica, sans-serif;
-    font-size: 1.4em;
-    -webkit-transition: -webkit-box-shadow 0.15s ease-in;
-    -moz-transition: -moz-box-shadow 0.15s ease-in;
-    -o-transition: -o-box-shadow 0.15s ease-in;
-    transition: box-shadow 0.15s ease-in;
+	padding-right: 10px;
+	z-index: 15;
+	position: absolute;
+	background-color: #eeeeef;
+	color: black;
+	font-family: helvetica, sans-serif;
+	font-size: 1.4em;
+	/*box-shadow: 2px 2px 19px #aaa;
+	-o-box-shadow: 2px 2px 19px #aaa;
+	-webkit-box-shadow: 2px 2px 19px #aaa;
+	-moz-box-shadow: 2px 2px 19px #aaa;
+	-moz-border-radius: 0.5em;
+	-webkit-transition: -webkit-box-shadow 0.15s ease-in;
+	-moz-transition: -moz-box-shadow 0.15s ease-in;
+	-o-transition: -o-box-shadow 0.15s ease-in;
+	transition: box-shadow 0.15s ease-in;*/s
 }
 
-.node-field-label {
-	text-decoration: none;
-	font-size: 0.7em;
+.node-block-root {
+	height: 100px;
 }
+
+.node-block-filter {
+	height: 350px;
+}
+
+.node-block-conditional {
+	height: 232px;
+}
+
+.node-block-manipulator {
+	height: 220px;
+}
+
+.node-block-fork {
+	height: 294px;
+}
+
+.node-block-cmdFire {
+	height: 80px;
+}
+
+.node-block-cmdHold {
+	height: 80px;
+}
+
 
 .node-const-value-field {
+	/*border-width: 2px;*/
+	/*border-radius: 4px;*/
+	/*border-style: solid;*/
+	height: 28px;
 	width: 120px;
-	height: 35px;
-	font-size: 0.8em;
+	font-size: 0.68em;
+	text-align: center;
+	padding-top: 0px;
 }
 
-.flowchart-demo .active {
-    border: 1px dotted green;
+.node-in-field-label, .node-out-field-label {
+	text-decoration: none;
+	font-size: 0.6em;
+	font-weight: 200;
 }
 
-.flowchart-demo .hover {
-    border: 1px dotted red;
+.node-in-field-label {
+	margin-top: 15px;
 }
 
-.flowchart-demo .jtk-connector {
-    z-index: 4;
+.node-in-field-label {
+	text-align: left;
+	margin-top: 8px;
+	margin-bottom: 0px;
 }
 
-.flowchart-demo .jtk-endpoint {
-    z-index: 22;
-    cursor: pointer;
+.node-out-field-label {
+	text-align: right;
+}
+
+
+.active {
+	border: 1px dotted green;
+}
+
+.hover {
+	border: 1px dotted red;
+}
+
+.jtk-connector {
+	z-index: 4;
+}
+
+.jtk-endpoint {
+	z-index: 22;
+	cursor: pointer;
 }
 
 
@@ -72,35 +125,12 @@
 	padding-right: 58px;
 }
 
-.flowchart-demo .aLabel {
-    background-color: white;
-    padding: 0.4em;
-    font: 12px sans-serif;
-    color: #444;
-    z-index: 21;
-    border: 1px dotted gray;
-    opacity: 0.8;
-    cursor: pointer;
-}
-
-.flowchart-demo .aLabel.jtk-hover {
-    background-color: #5C96BC;
-    color: white;
-    border: 1px solid white;
-}
-
-.window.jtk-connected {
-    border: 1px solid green;
-}
-
-.jtk-drag {
-    outline: 4px solid pink !important;
-}
 
 path, .jtk-endpoint {
-    cursor: pointer;
+	z-index: 21;
+	cursor: pointer;
 }
 
 .jtk-overlay {
-    background-color: transparent;
+	background-color: transparent;
 }
